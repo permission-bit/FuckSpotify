@@ -1,0 +1,150 @@
+# =========================
+#  OS / System
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# =========================
+#  Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# virtual envs
+venv/
+.env/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =========================
+#  Python Packaging
+# =========================
+*.whl
+
+# =========================
+#  Secrets / Config
+# =========================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets.json
+
+# Django
+db.sqlite3
+*.sqlite3
+*.sqlite3.backup-*
+
+staticfiles/
+
+# =========================
+#  Logs / Runtime
+# =========================
+*.log
+logs/
+*.pid
+*.sock
+*.out
+*.err
+
+# =========================
+#  Build / Dist
+# =========================
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# PyInstaller
+*.spec
+
+# =========================
+#  IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+#  Node (falls du frontend nutzt)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+#  Coverage / Tests
+# =========================
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# =========================
+#  Security / Tools
+# =========================
+*.pcap
+*.cap
+*.dump
+*.core
+
+# =========================
+#  Binary / Temp
+# =========================
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+
+# =========================
+#  macOS App / PyInstaller
+# =========================
+*.app/
+*.dmg
+
+# =========================
+#  Encryption Output
+# =========================
+*.enc
+
+# =========================
+#  Custom Project Stuff
+# =========================
+keys/
+backups/
+tmp/
+temp/
+uploads/
+secrets/
+cookies.json
+MyIcon.iconset/
+icon.png
+Labubu.jpg
+MyIcon.icns
+*.zip
+plugin/
+loader/unpacked/
+raas_tor/raas/
+onion.txt
