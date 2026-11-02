@@ -1,4 +1,4 @@
-# OfflineMusic
+# OfflineMusic IOS
 
 OfflineMusic is a native offline music player for iPhone, built with SwiftUI, SwiftData, and AVFoundation. It has no server, account, analytics, or internet requirement.
 
