@@ -37,14 +37,43 @@ The app stores imported music locally on the device. Removing the app removes it
 - `OfflineMusic/FolderImporter.swift` — recursive folder import
 - `convert.py` — optional music conversion helper
 
-## Music conversion helper
+## How to Use
 
-The optional helper converts an existing music folder recursively with `ffmpeg`. The app itself does not require conversion and can import supported files directly.
+This script downloads YouTube videos and converts them into MP3 files for offline listening.
+
+### 1. Install Dependencies
+
+Make sure you have Homebrew installed, then run:
 
 ```bash
-brew install ffmpeg
-python3 convert.py ./music ./converted --format m4a
+brew install yt-dlp ffmpeg
 ```
+
+### 2. Run the Converter
+
+```bash
+python3 converter.py
+```
+
+1. Enter the YouTube video URL.
+2. Choose a filename for your MP3.
+3. Wait for the download and conversion to finish.
+
+Your MP3 files will be saved in:
+
+```text
+~/Music/YouTube/
+```
+
+### 3. Import into the Offline Music App
+
+1. Transfer the MP3 files to your iPhone using AirDrop, iCloud Drive, or the Files app.
+2. Open the **Offline Music** app.
+3. Select **Add File** or **Add Folder**.
+4. Choose your downloaded MP3 files or the folder containing them.
+5. Enjoy your music offline, without an internet connection!
+
+**Note:** Only download content you own or have permission to download.
 
 Supported output formats are `m4a`, `mp3`, and `wav`. Metadata is preserved when supported by the selected format.
 
