@@ -3,6 +3,7 @@ import SwiftData
 import UniformTypeIdentifiers
 import AVFoundation
 import UIKit
+import PhotosUI
 
 private let appTint = Color(red: 0.20, green: 0.60, blue: 0.42)
 
@@ -89,7 +90,12 @@ struct EmptyLibraryCard: View {
 struct LibraryView: View {
     @Query(sort: \Song.title) private var songs: [Song]
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var player: AudioPlayer
     @State private var mode = 0
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedIDs = Set<UUID>()
+    @State private var showingActions = false
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -102,23 +108,66 @@ struct LibraryView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
 
-                List {
+                List(selection: $selectedIDs) {
                     if mode == 0 {
-                        ForEach(songs) { SongRow(song: $0) }
+                        ForEach(songs) { SongRow(song: $0).tag($0.id) }
                             .onDelete { offsets in offsets.forEach { context.delete(songs[$0]) } }
                     } else {
                         ForEach(grouped, id: \.key) { item in
                             Section(item.key) {
-                                ForEach(item.value) { SongRow(song: $0) }
+                                ForEach(item.value) { SongRow(song: $0).tag($0.id) }
                             }
                         }
                     }
                 }
                 .listStyle(.insetGrouped)
+                .environment(\.editMode, $editMode)
+                .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Bibliothek")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if editMode.isEditing {
+                        Button(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen") {
+                            if selectedIDs.count == songs.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(songs.map(\.id)) }
+                        }
+                    } else { EditButton() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if editMode.isEditing, !selectedIDs.isEmpty {
+                        Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                ToolbarItemGroup(placement: .bottomBar) {
+                    if editMode.isEditing {
+                        Button("Aktionen", systemImage: "ellipsis.circle") { showingActions = true }
+                            .disabled(selectedIDs.isEmpty)
+                        Spacer()
+                        Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
+                            .disabled(selectedIDs.isEmpty)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingActions) {
+                LibrarySelectionActions(songs: songs.filter { selectedIDs.contains($0.id) }, onFinish: finishSelection)
+            }
+            .confirmationDialog("Bibliothekseinträge löschen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+                Button("Löschen", role: .destructive) {
+                    songs.filter { selectedIDs.contains($0.id) }.forEach(context.delete)
+                    finishSelection()
+                }
+            } message: {
+                Text("Die ausgewählten Titel werden aus der Bibliothek entfernt. Audiodateien bleiben erhalten.")
+            }
         }
+    }
+
+    private func finishSelection() {
+        selectedIDs.removeAll()
+        editMode = .inactive
+        showingActions = false
     }
 
     private var grouped: [(key: String, value: [Song])] { Dictionary(grouping: songs) { mode == 1 ? $0.album : $0.artist }.sorted { $0.key < $1.key } }
@@ -142,37 +191,50 @@ struct SearchView: View {
 
 struct PlaylistsView: View {
     @Query(sort: \Playlist.name) private var playlists: [Playlist]
+    @Query(sort: \Song.title) private var songs: [Song]
     @Environment(\.modelContext) private var context
     @State private var showingPlaylistAlert = false
     @State private var showingArtistAlert = false
     @State private var query = ""
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedIDs = Set<UUID>()
+    @State private var editingPlaylist: Playlist?
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
-            List {
+            List(selection: $selectedIDs) {
                 Section {
                     NavigationLink { GenreLibraryView() } label: {
                         Label("Genres & Künstler", systemImage: "guitars")
                     }
                 }
                 Section("Deine Playlists") {
-                ForEach(filteredPlaylists) { playlist in
-                    NavigationLink { PlaylistDetail(playlist: playlist) } label: {
-                        Label {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(playlist.name)
-                                if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(.secondary) }
+                    ForEach(filteredPlaylists) { playlist in
+                        NavigationLink { PlaylistDetail(playlist: playlist) } label: {
+                            HStack(spacing: 12) {
+                                PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist))
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(playlist.name)
+                                    if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(.secondary) }
+                                }
                             }
-                        } icon: { Image(systemName: playlist.artistName.isEmpty ? "music.note.list" : "person.crop.circle") }
+                        }
+                        .tag(playlist.id)
+                        .contextMenu {
+                            Button("Umbenennen / Bearbeiten", systemImage: "pencil") { editingPlaylist = playlist }
+                            Button("Cover ändern", systemImage: "photo") { editingPlaylist = playlist }
+                            Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(playlist) }
+                        }
                     }
-                }
-                .onDelete { indexes in
-                    let visible = filteredPlaylists
-                    indexes.forEach { context.delete(visible[$0]) }
-                }
+                    .onDelete { indexes in
+                        let visible = filteredPlaylists
+                        indexes.forEach { context.delete(visible[$0]) }
                 }
             }
             .listStyle(.insetGrouped)
+            .environment(\.editMode, $editMode)
+            .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             .navigationTitle("Playlists")
             .searchable(text: $query, prompt: "Playlists oder Künstler suchen")
             .toolbar {
@@ -183,10 +245,39 @@ struct PlaylistsView: View {
                     } label: { Image(systemName: "plus.circle.fill") }
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if editMode.isEditing {
+                        Button(selectedIDs.count == filteredPlaylists.count ? "Auswahl aufheben" : "Alle auswählen") {
+                            if selectedIDs.count == filteredPlaylists.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(filteredPlaylists.map(\.id)) }
+                        }
+                    } else { EditButton() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if editMode.isEditing, !selectedIDs.isEmpty { Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary) }
+                }
+                ToolbarItem(placement: .bottomBar) {
+                    if editMode.isEditing {
+                        Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
+                            .disabled(selectedIDs.isEmpty)
+                    }
+                }
+            }
             .sheet(isPresented: $showingPlaylistAlert) { PlaylistEditorView() }
             .sheet(isPresented: $showingArtistAlert) { ArtistEditorView(createPlaylist: true) }
+            .sheet(item: $editingPlaylist) { PlaylistEditorView(playlist: $0) }
+            .confirmationDialog("Playlists löschen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+                Button("Löschen", role: .destructive) {
+                    playlists.filter { selectedIDs.contains($0.id) }.forEach(context.delete)
+                    selectedIDs.removeAll()
+                    editMode = .inactive
+                }
+            } message: { Text("Die ausgewählten Playlists und ihre Verknüpfungen werden entfernt. Songs und Audiodateien bleiben erhalten.") }
         }
     }
+
+}
 
     private var filteredPlaylists: [Playlist] {
         let search = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -195,58 +286,88 @@ struct PlaylistsView: View {
         }
     }
 
+    private func artworkData(for playlist: Playlist) -> Data? {
+        guard let firstID = playlist.songIDs.first else { return nil }
+        return songs.first(where: { $0.id == firstID })?.artworkData
+    }
+
 }
 
 struct PlaylistEditorView: View {
+    let playlist: Playlist?
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Song.title) private var songs: [Song]
     @State private var name = ""
     @State private var query = ""
     @State private var selectedIDs: Set<UUID> = []
+    @State private var coverData: Data?
+    @State private var photoItem: PhotosPickerItem?
+    @State private var showingFileImporter = false
     @State private var errorMessage: String?
+
+    init(playlist: Playlist? = nil) {
+        self.playlist = playlist
+        _name = State(initialValue: playlist?.name ?? "")
+        _selectedIDs = State(initialValue: Set(playlist?.songIDs ?? []))
+        _coverData = State(initialValue: playlist?.coverData)
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Name der Playlist") { TextField("Name", text: $name) }
-                Section("Titel auswählen · \(selectedIDs.count) ausgewählt") {
-                    ForEach(filteredSongs) { song in
-                        Button {
-                            if selectedIDs.contains(song.id) { selectedIDs.remove(song.id) }
-                            else { selectedIDs.insert(song.id) }
-                        } label: {
-                            HStack(spacing: 12) {
-                                Artwork(data: song.artworkData)
-                                VStack(alignment: .leading) {
-                                    Text(song.title).foregroundStyle(.primary).lineLimit(1)
-                                    Text(song.artist).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                                }
-                                Spacer()
-                                Image(systemName: selectedIDs.contains(song.id) ? "checkmark.circle.fill" : "circle")
+                Section("Cover") {
+                    HStack(spacing: 16) {
+                        CoverImage(data: coverData, size: 96)
+                        VStack(alignment: .leading, spacing: 8) {
+                            PhotosPicker(selection: $photoItem, matching: .images) {
+                                Label("Fotos auswählen", systemImage: "photo.on.rectangle")
+                            }
+                            Button("Datei auswählen", systemImage: "folder") { showingFileImporter = true }
+                            if coverData != nil {
+                                Button("Cover entfernen", systemImage: "xmark.circle", role: .destructive) { coverData = nil; photoItem = nil }
                             }
                         }
-                        .accessibilityAddTraits(selectedIDs.contains(song.id) ? .isSelected : [])
-                        .modifier(TrackSwipeActions(song: song))
-                    }
-                    if filteredSongs.isEmpty {
-                        Text(songs.isEmpty ? "Importiere Musik, um Titel auszuwählen." : "Keine passenden Titel gefunden.")
-                            .foregroundStyle(.secondary)
                     }
                 }
+                if playlist?.artistName.isEmpty ?? true {
+                    Section("Titel auswählen · \(selectedIDs.count) ausgewählt") {
+                        ForEach(filteredSongs) { song in
+                            Button {
+                                if selectedIDs.contains(song.id) { selectedIDs.remove(song.id) }
+                                else { selectedIDs.insert(song.id) }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Artwork(data: song.artworkData)
+                                    VStack(alignment: .leading) {
+                                        Text(song.title).foregroundStyle(.primary).lineLimit(1)
+                                        Text(song.artist).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                    Spacer()
+                                    Image(systemName: selectedIDs.contains(song.id) ? "checkmark.circle.fill" : "circle")
+                                }
+                            }
+                            .accessibilityAddTraits(selectedIDs.contains(song.id) ? .isSelected : [])
+                            .modifier(TrackSwipeActions(song: song))
+                        }
+                        if filteredSongs.isEmpty {
+                            Text(songs.isEmpty ? "Importiere Musik, um Titel auszuwählen." : "Keine passenden Titel gefunden.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Section { Text("Artist-Playlists werden automatisch über den Künstler gepflegt.").foregroundStyle(.secondary) }
+                }
             }
-            .navigationTitle("Playlist erstellen")
+            .navigationTitle(playlist == nil ? "Playlist erstellen" : "Playlist bearbeiten")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Titel, Künstler oder Album suchen")
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Titel, Künstler oder Album suchen")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Erstellen") {
-                        let playlist = Playlist(name: name.trimmingCharacters(in: .whitespacesAndNewlines))
-                        playlist.songIDs = songs.filter { selectedIDs.contains($0.id) }.map(\.id)
-                        context.insert(playlist)
-                        do { try context.save(); dismiss() }
-                        catch { context.delete(playlist); errorMessage = error.localizedDescription }
+                    Button(playlist == nil ? "Erstellen" : "Speichern") {
+                        savePlaylist()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
@@ -254,6 +375,20 @@ struct PlaylistEditorView: View {
             .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") { errorMessage = nil }
             } message: { Text(errorMessage ?? "") }
+            .onChange(of: photoItem) { _, item in
+                guard let item else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self) {
+                        coverData = resizedCoverData(data)
+                    }
+                }
+            }
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
+                guard case .success(let urls) = result, let url = urls.first else { return }
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                if let data = try? Data(contentsOf: url) { coverData = resizedCoverData(data) }
+            }
         }
     }
 
@@ -263,39 +398,286 @@ struct PlaylistEditorView: View {
             "\($0.title) \($0.artist) \($0.album)".localizedStandardContains(search)
         }
     }
+
+    private func savePlaylist() {
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanName.isEmpty else { return }
+        do {
+            if let playlist {
+                playlist.name = cleanName
+                playlist.coverData = coverData
+                if playlist.artistName.isEmpty {
+                    let selected = Set(selectedIDs)
+                    let existingOrder = playlist.songIDs.filter { selected.contains($0) }
+                    let existingIDs = Set(existingOrder)
+                    let newlySelected = songs.filter { selected.contains($0.id) && !existingIDs.contains($0.id) }.map(\.id)
+                    playlist.songIDs = existingOrder + newlySelected
+                }
+            } else {
+                let created = Playlist(name: cleanName, coverData: coverData)
+                created.songIDs = songs.filter { selectedIDs.contains($0.id) }.map(\.id)
+                context.insert(created)
+            }
+            try context.save()
+            dismiss()
+        } catch { errorMessage = error.localizedDescription }
+    }
 }
 
 struct PlaylistDetail: View {
     let playlist: Playlist
     @Query private var songs: [Song]
     @Query private var artists: [ArtistProfile]
+    @Environment(\.modelContext) private var context
     @EnvironmentObject private var player: AudioPlayer
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedIDs = Set<UUID>()
+    @State private var showingEditor = false
+    @State private var showingClearSelection = false
 
     init(playlist: Playlist) { self.playlist = playlist; _songs = Query() }
 
     var body: some View {
         List {
+            Section {
+                HStack(spacing: 16) {
+                    PlaylistArtwork(playlist: playlist, fallbackData: regularSongs.first?.artworkData, size: 92)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(playlist.name).font(.title3.bold())
+                        Text(playlist.artistName.isEmpty ? "\(regularSongs.count) Titel" : "Artist playlist · \(artistSongs.count) Titel")
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+            }
+            .listRowBackground(Color.clear)
             if !playlist.artistName.isEmpty {
-                Section {
-                    ForEach(artistSongs) { SongRow(song: $0) }
-                } header: {
+                Section { ForEach(artistSongs) { SongRow(song: $0) } } header: {
                     Label("Alle Titel von \(playlist.artistName)", systemImage: "person.crop.circle")
                 }
+            } else if regularSongs.isEmpty {
+                ContentUnavailableView("Playlist ist leer", systemImage: "music.note.list", description: Text("Füge Titel über das Kontextmenü oder Bearbeiten hinzu."))
             } else {
-                ForEach(regularSongs) { SongRow(song: $0) }
+                Section("Titel · \(regularSongs.count)") {
+                    ForEach(regularSongs) { song in
+                        PlaylistSongRow(song: song) {
+                            remove(song)
+                        }
+                        .tag(song.id)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button("Entfernen", systemImage: "minus.circle", role: .destructive) { remove(song) }
+                        }
+                    }
+                    .onMove(perform: move)
+                    .onDelete(perform: remove)
+                }
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.editMode, $editMode)
+        .animation(.easeInOut(duration: 0.2), value: regularSongs.map(\.id))
         .navigationTitle(playlist.name)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if playlist.artistName.isEmpty, !regularSongs.isEmpty {
+                    if editMode.isEditing {
+                        Button(selectedIDs.count == regularSongs.count ? "Auswahl aufheben" : "Alle auswählen") {
+                            if selectedIDs.count == regularSongs.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(regularSongs.map(\.id)) }
+                        }
+                    } else { EditButton() }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if editMode.isEditing, !selectedIDs.isEmpty {
+                    Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Button("Bearbeiten", systemImage: "pencil") { showingEditor = true }
+                }
+            }
+            ToolbarItem(placement: .bottomBar) {
+                if editMode.isEditing, !selectedIDs.isEmpty {
+                    Button("Aus Playlist entfernen", systemImage: "minus.circle", role: .destructive) { showingClearSelection = true }
+                }
+            }
+        }
+        .sheet(isPresented: $showingEditor) { PlaylistEditorView(playlist: playlist) }
+        .confirmationDialog("Titel aus Playlist entfernen?", isPresented: $showingClearSelection, titleVisibility: .visible) {
+            Button("Entfernen", role: .destructive) {
+                playlist.songIDs.removeAll { selectedIDs.contains($0) }
+                try? context.save()
+                selectedIDs.removeAll()
+                editMode = .inactive
+            }
+        } message: { Text("Die Audiodateien bleiben in deiner Bibliothek erhalten.") }
     }
 
-    private var regularSongs: [Song] { songs.filter { playlist.songIDs.contains($0.id) } }
+    private var regularSongs: [Song] {
+        let lookup = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
+        return playlist.songIDs.compactMap { lookup[$0] }
+    }
     private var artistSongs: [Song] {
         let profile = artists.first { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(playlist.artistName) }
         return songs.filter { song in
             if let profile { return song.artistIDs.contains(profile.id) }
             return MusicCatalog.containsName(playlist.artistName, in: song.artist)
         }
+    }
+
+    private func move(from offsets: IndexSet, to destination: Int) {
+        var visibleIDs = regularSongs.map(\.id)
+        visibleIDs.move(fromOffsets: offsets, toOffset: destination)
+        let visibleSet = Set(visibleIDs)
+        playlist.songIDs = visibleIDs + playlist.songIDs.filter { !visibleSet.contains($0) }
+        try? context.save()
+    }
+
+    private func remove(_ song: Song) {
+        playlist.songIDs.removeAll { $0 == song.id }
+        selectedIDs.remove(song.id)
+        try? context.save()
+    }
+
+    private func remove(at offsets: IndexSet) {
+        let ids = offsets.map { regularSongs[$0].id }
+        playlist.songIDs.removeAll { ids.contains($0) }
+        try? context.save()
+    }
+}
+
+struct PlaylistSongRow: View {
+    let song: Song
+    let remove: () -> Void
+    @EnvironmentObject private var player: AudioPlayer
+
+    var body: some View {
+        Button { player.play(song) } label: {
+            HStack(spacing: 12) {
+                Artwork(data: song.artworkData)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(song.title).font(.body.weight(.medium)).lineLimit(1)
+                    Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer()
+                if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }
+            }
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }
+            Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }
+            Divider()
+            Button("Aus Playlist entfernen", systemImage: "minus.circle", role: .destructive, action: remove)
+        }
+    }
+}
+
+struct PlaylistArtwork: View {
+    let data: Data?
+    let size: CGFloat
+
+    init(playlist: Playlist, fallbackData: Data? = nil, size: CGFloat = 56) {
+        self.data = playlist.coverData ?? fallbackData
+        self.size = size
+    }
+
+    var body: some View { CoverImage(data: data, size: size) }
+}
+
+struct CoverImage: View {
+    let data: Data?
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let data, let image = UIImage(data: data) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Image(systemName: "music.note.list")
+                    .font(.system(size: size * 0.38, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: size, height: size)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: size * 0.18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.18, style: .continuous))
+    }
+}
+
+private func resizedCoverData(_ data: Data) -> Data {
+    guard let image = UIImage(data: data), max(image.size.width, image.size.height) > 1024 else { return data }
+    let scale = 1024 / max(image.size.width, image.size.height)
+    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    let renderer = UIGraphicsImageRenderer(size: size)
+    return renderer.jpegData(withCompressionQuality: 0.82) { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+}
+
+struct LibrarySelectionActions: View {
+    let songs: [Song]
+    let onFinish: () -> Void
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var player: AudioPlayer
+    @Query(sort: \Playlist.name) private var playlists: [Playlist]
+    @State private var newPlaylistName = ""
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Auswahl") { Text("\(songs.count) Titel ausgewählt").foregroundStyle(.secondary) }
+                Section("Zu bestehender Playlist hinzufügen") {
+                    ForEach(playlists.filter { $0.artistName.isEmpty }) { playlist in
+                        Button {
+                            add(to: playlist)
+                        } label: {
+                            Label(playlist.name, systemImage: "plus.rectangle.on.folder")
+                        }
+                    }
+                    if playlists.filter({ $0.artistName.isEmpty }).isEmpty {
+                        Text("Noch keine normale Playlist vorhanden.").foregroundStyle(.secondary)
+                    }
+                }
+                Section("Neue Playlist") {
+                    TextField("Name der Playlist", text: $newPlaylistName)
+                    Button("Neue Playlist mit Auswahl erstellen", systemImage: "plus.circle.fill") { createPlaylist() }
+                        .disabled(newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                Section("Wiedergabe") {
+                    Button("Auswahl an Warteschlange anhängen", systemImage: "text.badge.plus") {
+                        player.addToQueue(songs)
+                        finish()
+                    }
+                }
+            }
+            .navigationTitle("Auswahlaktionen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Fertig") { finish() } } }
+            .alert("Aktion fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+                Button("OK") { errorMessage = nil }
+            } message: { Text(errorMessage ?? "") }
+        }
+    }
+
+    private func add(to playlist: Playlist) {
+        let existing = Set(playlist.songIDs)
+        playlist.songIDs.append(contentsOf: songs.map(\.id).filter { !existing.contains($0) })
+        do { try context.save(); finish() } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func createPlaylist() {
+        let name = newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let playlist = Playlist(name: name)
+        playlist.songIDs = songs.map(\.id)
+        context.insert(playlist)
+        do { try context.save(); finish() } catch { context.delete(playlist); errorMessage = error.localizedDescription }
+    }
+
+    private func finish() {
+        onFinish()
+        dismiss()
     }
 }
 

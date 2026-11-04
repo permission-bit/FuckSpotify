@@ -35,8 +35,13 @@ struct OfflineMusicApp: App {
     var name: String
     var songIDs: [UUID] = []
     var artistName: String = ""
+    var coverData: Data?
     var createdAt: Date = Date()
-    init(name: String, artistName: String = "") { self.name = name; self.artistName = artistName }
+    init(name: String, artistName: String = "", coverData: Data? = nil) {
+        self.name = name
+        self.artistName = artistName
+        self.coverData = coverData
+    }
 }
 
 @Model final class MusicGenre: Identifiable {
@@ -135,6 +140,12 @@ struct PlaybackSession: Codable, Equatable {
     func addToQueue(_ song: Song) {
         guard song.id != current?.id, !queue.contains(where: { $0.id == song.id }) else { return }
         queue.append(song)
+        saveSessionNow()
+    }
+
+    func addToQueue(_ songs: [Song]) {
+        let existing = Set(queue.map(\.id) + [current?.id].compactMap { $0 })
+        queue.append(contentsOf: songs.filter { !existing.contains($0.id) })
         saveSessionNow()
     }
 
