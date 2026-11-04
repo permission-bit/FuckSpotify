@@ -77,6 +77,19 @@ Your MP3 files will be saved in:
 
 Supported output formats are `m4a`, `mp3`, and `wav`. Metadata is preserved when supported by the selected format.
 
+## Genres and artist recognition
+
+In **Playlists → Genres & Künstler**, the offline catalog groups imported music into
+15 starter genres with known artists. These broad starter assignments can be edited
+on an artist's page. Unknown music remains under **Ohne Zuordnung**.
+
+**Playlists → + → Create Artist +** lets you select a genre or enter a new one.
+Alternative artist spellings can be entered separated by commas. Saving also
+updates existing songs; future imports use the same catalog automatically.
+Artist metadata takes priority, followed by whole-name matching in titles and file
+names when no catalog artist matches the metadata. No online lookup is required.
+Downloaded files are classified when they are imported into the iOS app.
+
 ## License
 
 Add the license of your choice before publishing this repository.

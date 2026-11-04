@@ -9,7 +9,7 @@ struct OfflineMusicApp: App {
     @StateObject private var player = AudioPlayer.shared
     var body: some Scene {
         WindowGroup { RootView().environmentObject(player) }
-            .modelContainer(for: [Song.self, Playlist.self])
+            .modelContainer(for: [Song.self, Playlist.self, MusicGenre.self, ArtistProfile.self])
     }
 }
 
@@ -23,6 +23,8 @@ struct OfflineMusicApp: App {
     var artworkData: Data?
     var addedAt: Date = Date()
     var isFavorite: Bool = false
+    var artistIDs: [UUID] = []
+    var genreIDs: [UUID] = []
     init(title: String, artist: String = "Unknown Artist", album: String = "Unknown Album", duration: Double = 0, fileName: String, artworkData: Data? = nil) {
         self.title = title; self.artist = artist; self.album = album; self.duration = duration; self.fileName = fileName; self.artworkData = artworkData
     }
@@ -35,6 +37,24 @@ struct OfflineMusicApp: App {
     var artistName: String = ""
     var createdAt: Date = Date()
     init(name: String, artistName: String = "") { self.name = name; self.artistName = artistName }
+}
+
+@Model final class MusicGenre: Identifiable {
+    var id: UUID = UUID()
+    var name: String = ""
+    init(name: String) { self.name = name }
+}
+
+@Model final class ArtistProfile: Identifiable {
+    var id: UUID = UUID()
+    var name: String = ""
+    var aliases: [String] = []
+    var genreID: UUID?
+    init(name: String, aliases: [String] = [], genreID: UUID? = nil) {
+        self.name = name
+        self.aliases = aliases
+        self.genreID = genreID
+    }
 }
 
 enum LibraryStore {
