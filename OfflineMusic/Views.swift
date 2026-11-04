@@ -800,7 +800,25 @@ struct TrackSwipeActions: ViewModifier {
     }
 }
 
-struct Artwork: View { let data: Data?; var body: some View { Group { if let data, let image = UIImage(data: data) { Image(uiImage: image).resizable().scaledToFill() } else { Image(systemName: "music.note").font(.title2).foregroundStyle(.secondary) } }.frame(width: 48, height: 48).background(.quaternary, in: RoundedRectangle(cornerRadius: 10)).clipShape(RoundedRectangle(cornerRadius: 10)) } }
+struct Artwork: View {
+    let data: Data?
+    var size: CGFloat = 48
+
+    var body: some View {
+        Group {
+            if let data, let image = UIImage(data: data) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Image(systemName: "music.note")
+                    .font(.system(size: size * 0.45))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: size, height: size)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
+        .clipShape(RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
+    }
+}
 
 struct MiniPlayer: View {
     @EnvironmentObject private var player: AudioPlayer
@@ -861,9 +879,12 @@ struct NowPlayingView: View {
             List(selection: $selectedQueueIDs) {
                 Section {
                     VStack(spacing: 24) {
-                        Artwork(data: player.current?.artworkData)
-                            .frame(width: 280, height: 280)
-                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                        GeometryReader { geometry in
+                            Artwork(data: player.current?.artworkData, size: geometry.size.width)
+                        }
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(maxWidth: 420)
+                        .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 5) {
                             Text(player.current?.title ?? "").font(.title2.bold())
                             Text(player.current?.artist ?? "").foregroundStyle(.secondary)
