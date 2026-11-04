@@ -35,7 +35,11 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.2), value: player.current?.id)
         .onAppear { player.setLibrary(songs) }.onChange(of: songs.count) { _, _ in player.setLibrary(songs) }
         .task {
-            do { try MusicCatalog.seed(in: context) }
+            do {
+                try DuplicateLibraryStore.recover(in: context)
+                try await Importer.recoverInterruptedImports(context: context)
+                try MusicCatalog.seed(in: context)
+            }
             catch { catalogError = error.localizedDescription }
         }
         .alert("Musikkatalog konnte nicht geladen werden", isPresented: Binding(get: { catalogError != nil }, set: { if !$0 { catalogError = nil } })) {
@@ -187,15 +191,17 @@ struct SearchView: View {
         NavigationStack {
             List(filtered) { SongRow(song: $0) }
                 .listStyle(.insetGrouped)
-                .searchable(text: $query, prompt: "Titel, Künstler oder Album")
+                .searchable(text: $query, prompt: "Titel, Künstler, Album oder Genre")
                 .navigationTitle("Suche")
         }
     }
 
     private var filtered: [Song] {
-        query.isEmpty ? songs : songs.filter { song in
-            let genreNames = genres.filter { song.genreIDs.contains($0.id) }.map(\.name).joined(separator: " ")
-            return "\(song.title) \(song.artist) \(song.album) \(genreNames)".localizedCaseInsensitiveContains(query)
+        let search = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !search.isEmpty else { return songs }
+        let matchedGenres = Set(genres.filter { $0.name.localizedStandardContains(search) }.map(\.id))
+        return songs.filter { song in
+            "\(song.title) \(song.artist) \(song.album)".localizedStandardContains(search) || song.genreIDs.contains { matchedGenres.contains($0) }
         }
     }
 }
@@ -619,6 +625,7 @@ struct PlaylistSongRow: View {
     let song: Song
     let remove: () -> Void
     @EnvironmentObject private var player: AudioPlayer
+    @State private var showingGenreEditor = false
 
     var body: some View {
         Button { player.play(song) } label: {
@@ -634,11 +641,13 @@ struct PlaylistSongRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
+            Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
             Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }
             Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }
             Divider()
             Button("Aus Playlist entfernen", systemImage: "minus.circle", role: .destructive, action: remove)
         }
+        .sheet(isPresented: $showingGenreEditor) { SongGenreEditorView(song: song) }
     }
 }
 
@@ -756,6 +765,7 @@ struct SongRow: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Playlist.name) private var playlists: [Playlist]
     @State private var showingGenreEditor = false
+    @State private var genreError: String?
     var body: some View {
         Button { player.play(song) } label: { HStack(spacing: 12) { Artwork(data: song.artworkData); VStack(alignment: .leading, spacing: 3) { Text(song.title).font(.body.weight(.medium)).lineLimit(1); Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(minLength: 4); if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }; Image(systemName: "ellipsis").foregroundStyle(.tertiary).font(.caption) }.contentShape(Rectangle()) }.buttonStyle(.plain).padding(.vertical, 5)
         .modifier(TrackSwipeActions(song: song))
@@ -763,7 +773,14 @@ struct SongRow: View {
             Button(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten", systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }
             Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
             if song.genreOverrideID != nil {
-                Button("Originalgenre wiederherstellen", systemImage: "arrow.uturn.backward") { SongGenreStore.restore(song, context: context) }
+                Button("Originalgenre wiederherstellen", systemImage: "arrow.uturn.backward") {
+                    Task {
+                        do {
+                            try await SongGenreStore.loadOriginal(song, context: context)
+                            try SongGenreStore.restore(song, context: context)
+                        } catch { genreError = error.localizedDescription }
+                    }
+                }
             }
             Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }
             Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }
@@ -778,6 +795,9 @@ struct SongRow: View {
             Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(song) }
         }
         .sheet(isPresented: $showingGenreEditor) { SongGenreEditorView(song: song) }
+        .alert("Genre konnte nicht wiederhergestellt werden", isPresented: Binding(get: { genreError != nil }, set: { if !$0 { genreError = nil } })) {
+            Button("OK") { genreError = nil }
+        } message: { Text(genreError ?? "") }
     }
 }
 
@@ -873,6 +893,7 @@ struct NowPlayingView: View {
     @State private var editMode: EditMode = .inactive
     @State private var selectedQueueIDs = Set<UUID>()
     @State private var showingClearQueueConfirmation = false
+    @State private var showingGenreEditor = false
 
     var body: some View {
         NavigationStack {
@@ -890,6 +911,9 @@ struct NowPlayingView: View {
                             Text(player.current?.artist ?? "").foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .contextMenu {
+                            Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
+                        }
                         Slider(value: Binding(get: { player.progress }, set: player.seek))
                         HStack {
                             Text(time(player.progress * (player.current?.duration ?? 0)))
@@ -942,6 +966,9 @@ struct NowPlayingView: View {
             .environment(\.editMode, $editMode)
             .animation(.easeInOut(duration: 0.2), value: player.queue.map(\.id))
             .navigationTitle("Wiedergabe")
+            .sheet(isPresented: $showingGenreEditor) {
+                if let song = player.current { SongGenreEditorView(song: song) }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -1032,31 +1059,7 @@ enum Importer {
         for source in urls {
             let accessed = source.startAccessingSecurityScopedResource()
             defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-            let destination = LibraryStore.musicURL.appendingPathComponent(UUID().uuidString + "-" + source.lastPathComponent)
-            guard (try? FileManager.default.copyItem(at: source, to: destination)) != nil else { continue }
-            let asset = AVURLAsset(url: destination)
-            let metadata = (try? await asset.load(.commonMetadata)) ?? []
-            func metadataValue(_ key: AVMetadataIdentifier) async -> String {
-                guard let item = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: key).first,
-                      let value = try? await item.load(.value) as? String else { return "" }
-                return value
-            }
-            let titleValue = await metadataValue(.commonIdentifierTitle)
-            let artistValue = await metadataValue(.commonIdentifierArtist)
-            let albumValue = await metadataValue(.commonIdentifierAlbumName)
-            let importedGenre = await metadataValue(.commonIdentifierType)
-            let title = titleValue.isEmpty ? source.deletingPathExtension().lastPathComponent : titleValue
-            let artist = artistValue.isEmpty ? "Unbekannter Künstler" : artistValue
-            let album = albumValue.isEmpty ? "Unbekanntes Album" : albumValue
-            let duration = (try? await asset.load(.duration)).map(CMTimeGetSeconds) ?? 0
-            let artItem = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: .commonIdentifierArtwork).first
-            var art: Data?
-            if let artItem { art = try? await artItem.load(.dataValue) }
-            let song = Song(title: title, artist: artist, album: album, duration: duration.isFinite ? duration : 0, fileName: destination.lastPathComponent, artworkData: art, importedGenre: importedGenre)
-            let profiles = (try? context.fetch(FetchDescriptor<ArtistProfile>())) ?? []
-            let genres = (try? context.fetch(FetchDescriptor<MusicGenre>())) ?? []
-            MusicCatalog.classify(song, artists: profiles, genres: genres)
-            context.insert(song)
+            try? await stageAndImport(source, context: context)
         }
     }
 }

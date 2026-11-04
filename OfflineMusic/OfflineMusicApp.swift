@@ -26,6 +26,7 @@ struct OfflineMusicApp: App {
     var artistIDs: [UUID] = []
     var genreIDs: [UUID] = []
     var importedGenre: String = ""
+    var genreMetadataLoaded: Bool = false
     var originalGenreIDs: [UUID] = []
     var inferredGenreIDs: [UUID] = []
     var genreOverrideID: UUID?
@@ -183,6 +184,27 @@ struct PlaybackSession: Codable, Equatable {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         } else if let current, let index = library.firstIndex(where: { $0.id == current.id }) {
             currentIndex = index
+        }
+        saveSessionNow()
+    }
+
+    func reconcileDuplicates(songs: [Song], replacements: [UUID: UUID], previousCurrentID: UUID?, previousQueueIDs: [UUID]) {
+        library = songs
+        let lookup = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
+        var seen = Set<UUID>()
+        let currentID = previousCurrentID.map { replacements[$0] ?? $0 }
+        queue = previousQueueIDs.compactMap { originalID in
+            let id = replacements[originalID] ?? originalID
+            guard id != currentID, seen.insert(id).inserted else { return nil }
+            return lookup[id]
+        }
+        if let previousCurrentID, let replacementID = replacements[previousCurrentID], let replacement = lookup[replacementID] {
+            let position = audio?.currentTime ?? 0
+            let playing = isPlaying
+            if !prepare(replacement, at: position, shouldPlay: playing) { stop(); current = nil; audio = nil }
+        } else if let currentID {
+            current = lookup[currentID]
+            currentIndex = songs.firstIndex { $0.id == currentID } ?? 0
         }
         saveSessionNow()
     }
