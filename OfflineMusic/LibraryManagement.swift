@@ -472,6 +472,8 @@ enum DuplicateLibraryStore {
     static func delete(groups: [DuplicateGroup], removalIDs: Set<UUID>, keepIDs: [String: UUID], context: ModelContext, player: AudioPlayer) throws -> Int {
         let safeIDs = DuplicateScanner.safeDeletionIDs(groups: groups, removalIDs: removalIDs).ids
         guard !safeIDs.isEmpty else { throw CocoaError(.fileWriteNoPermission) }
+        player.prepareForLibraryMutation()
+        defer { player.finishLibraryMutation() }
         let songs = try context.fetch(FetchDescriptor<Song>())
         let lookup = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
         let selected = songs.filter { safeIDs.contains($0.id) }
@@ -501,7 +503,10 @@ enum DuplicateLibraryStore {
                 playlist.songIDs = playlist.songIDs.map { replacements[$0] ?? $0 }.filter { seen.insert($0).inserted }
             }
             for song in selected {
-                if song.isFavorite, let id = replacements[song.id] { lookup[id]?.isFavorite = true }
+                if let id = replacements[song.id], let kept = lookup[id] {
+                    if song.isFavorite { kept.isFavorite = true }
+                    kept.mergeHistory(from: song)
+                }
                 context.delete(song)
             }
             try context.save()

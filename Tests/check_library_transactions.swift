@@ -25,6 +25,8 @@ enum LibraryStore {
     static let musicURL = FileManager.default.temporaryDirectory.appendingPathComponent("library-test-" + UUID().uuidString, isDirectory: true)
 }
 @MainActor final class AudioPlayer {
+    func prepareForLibraryMutation() {}
+    func finishLibraryMutation() {}
     var current: Song?
     var queue: [Song] = []
     var replacements: [UUID: UUID] = [:]
@@ -66,6 +68,11 @@ try await Task { @MainActor in
     precondition(a.genreOverrideID == nil && a.genreIDs == [original.id])
 
     a.isFavorite = true
+    a.playCount = 3
+    a.lastPlayedAt = Date(timeIntervalSince1970: 200)
+    a.addedAt = Date(timeIntervalSince1970: 100)
+    b.playCount = 2
+    b.lastPlayedAt = Date(timeIntervalSince1970: 150)
     let removedID = a.id, keptID = b.id
     let playlist = Playlist(name: "Manual")
     playlist.songIDs = [removedID, keptID]
@@ -80,6 +87,7 @@ try await Task { @MainActor in
     player.queue = [a, b]
     let count = try DuplicateLibraryStore.delete(groups: [group], removalIDs: [removedID], keepIDs: [group.id: keptID], context: context, player: player)
     precondition(count == 1 && playlist.songIDs == [keptID] && b.isFavorite)
+    precondition(b.playCount == 5 && b.lastPlayedAt == Date(timeIntervalSince1970: 200) && b.addedAt == Date(timeIntervalSince1970: 100), "Removing duplicates must preserve listening history and earliest import date")
     precondition(player.current?.id == keptID && player.replacements[removedID] == keptID)
     precondition(!fm.fileExists(atPath: LibraryStore.musicURL.appendingPathComponent("a.mp3").path))
     precondition(fm.fileExists(atPath: LibraryStore.musicURL.appendingPathComponent("b.mp3").path))

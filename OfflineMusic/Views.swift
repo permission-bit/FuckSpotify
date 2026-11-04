@@ -33,7 +33,7 @@ struct RootView: View {
         }
         .tint(appTint)
         .animation(.easeInOut(duration: 0.2), value: player.current?.id)
-        .onAppear { player.setLibrary(songs) }.onChange(of: songs.count) { _, _ in player.setLibrary(songs) }
+        .onAppear { player.attachHistoryContext(context); player.setLibrary(songs) }.onChange(of: songs.map(\.id)) { _, _ in player.setLibrary(songs) }
         .task {
             do {
                 try DuplicateLibraryStore.recover(in: context)
@@ -207,7 +207,7 @@ struct SearchView: View {
 }
 
 struct PlaylistsView: View {
-    private enum Route: Hashable { case playlist(UUID), catalog }
+    private enum Route: Hashable { case playlist(UUID), smart(SmartPlaylistKind), catalog }
     @State private var path: [Route] = []
     @Query(sort: \Playlist.name) private var playlists: [Playlist]
     @Query(sort: \Song.title) private var songs: [Song]
@@ -252,6 +252,20 @@ struct PlaylistsView: View {
                         indexes.forEach { context.delete(visible[$0]) }
                     }
                 }
+                Section("Smart Playlists") {
+                    ForEach(SmartPlaylistKind.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }) { kind in
+                        NavigationLink(value: Route.smart(kind)) {
+                            HStack(spacing: 12) {
+                                Image(systemName: kind.symbol).font(.title2).frame(width: 48, height: 48).foregroundStyle(appTint)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(kind.title)
+                                    Text("Smart Playlist · automatisch").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .selectionDisabled()
+                    }
+                }
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, $editMode)
@@ -259,6 +273,7 @@ struct PlaylistsView: View {
             .navigationTitle("Playlists")
             .navigationDestination(for: Route.self) { route in
                 switch route {
+                case .smart(let kind): SmartPlaylistDetail(kind: kind)
                 case .catalog: GenreLibraryView()
                 case .playlist(let id):
                     if let playlist = playlists.first(where: { $0.id == id }) {
@@ -504,7 +519,7 @@ struct PlaylistDetail: View {
     init(playlist: Playlist) { self.playlist = playlist; _songs = Query() }
 
     var body: some View {
-        List {
+        List(selection: $selectedIDs) {
             Section {
                 HStack(spacing: 16) {
                     PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.compactMap(\.artworkData).first, size: 92)
@@ -519,7 +534,7 @@ struct PlaylistDetail: View {
             }
             .listRowBackground(Color.clear)
             if !playlist.artistName.isEmpty {
-                Section { ForEach(artistSongs) { SongRow(song: $0) } } header: {
+                Section { ForEach(artistSongs) { SongRow(song: $0, playbackCollection: artistSongs) } } header: {
                     Label("Alle Titel von \(playlist.artistName)", systemImage: "person.crop.circle")
                 }
             } else if regularSongs.isEmpty {
@@ -527,9 +542,7 @@ struct PlaylistDetail: View {
             } else {
                 Section("Titel · \(regularSongs.count)") {
                     ForEach(regularSongs) { song in
-                        PlaylistSongRow(song: song) {
-                            remove(song)
-                        }
+                        PlaylistSongRow(song: song, remove: { remove(song) }, onPlay: { player.play(song, in: regularSongs) })
                         .tag(song.id)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button("Entfernen", systemImage: "minus.circle", role: .destructive) { remove(song) }
@@ -579,7 +592,7 @@ struct PlaylistDetail: View {
         }
         .confirmationDialog("Titel aus Playlist entfernen?", isPresented: $showingClearSelection, titleVisibility: .visible) {
             Button("Entfernen", role: .destructive) {
-                playlist.songIDs.removeAll { selectedIDs.contains($0) }
+                playlist.removeSongs(selectedIDs)
                 try? context.save()
                 selectedIDs.removeAll()
                 editMode = .inactive
@@ -603,20 +616,19 @@ struct PlaylistDetail: View {
     private func move(from offsets: IndexSet, to destination: Int) {
         var visibleIDs = regularSongs.map(\.id)
         visibleIDs.move(fromOffsets: offsets, toOffset: destination)
-        let visibleSet = Set(visibleIDs)
-        playlist.songIDs = visibleIDs + playlist.songIDs.filter { !visibleSet.contains($0) }
+        playlist.reorderSongs(visibleIDs)
         try? context.save()
     }
 
     private func remove(_ song: Song) {
-        playlist.songIDs.removeAll { $0 == song.id }
+        playlist.removeSongs([song.id])
         selectedIDs.remove(song.id)
         try? context.save()
     }
 
     private func remove(at offsets: IndexSet) {
-        let ids = offsets.map { regularSongs[$0].id }
-        playlist.songIDs.removeAll { ids.contains($0) }
+        let ids = Set(offsets.map { regularSongs[$0].id })
+        playlist.removeSongs(ids)
         try? context.save()
     }
 }
@@ -624,11 +636,12 @@ struct PlaylistDetail: View {
 struct PlaylistSongRow: View {
     let song: Song
     let remove: () -> Void
+    var onPlay: (() -> Void)? = nil
     @EnvironmentObject private var player: AudioPlayer
     @State private var showingGenreEditor = false
 
     var body: some View {
-        Button { player.play(song) } label: {
+        Button { if let onPlay { onPlay() } else { player.play(song) } } label: {
             HStack(spacing: 12) {
                 Artwork(data: song.artworkData)
                 VStack(alignment: .leading, spacing: 3) {
@@ -739,8 +752,7 @@ struct LibrarySelectionActions: View {
     }
 
     private func add(to playlist: Playlist) {
-        let existing = Set(playlist.songIDs)
-        playlist.songIDs.append(contentsOf: songs.map(\.id).filter { !existing.contains($0) })
+        playlist.appendSongs(songs.map(\.id))
         do { try context.save(); finish() } catch { errorMessage = error.localizedDescription }
     }
 
@@ -748,7 +760,7 @@ struct LibrarySelectionActions: View {
         let name = newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
         let playlist = Playlist(name: name)
-        playlist.songIDs = songs.map(\.id)
+        playlist.appendSongs(songs.map(\.id))
         context.insert(playlist)
         do { try context.save(); finish() } catch { context.delete(playlist); errorMessage = error.localizedDescription }
     }
@@ -761,13 +773,14 @@ struct LibrarySelectionActions: View {
 
 struct SongRow: View {
     let song: Song
+    var playbackCollection: [Song]? = nil
     @EnvironmentObject private var player: AudioPlayer
     @Environment(\.modelContext) private var context
     @Query(sort: \Playlist.name) private var playlists: [Playlist]
     @State private var showingGenreEditor = false
     @State private var genreError: String?
     var body: some View {
-        Button { player.play(song) } label: { HStack(spacing: 12) { Artwork(data: song.artworkData); VStack(alignment: .leading, spacing: 3) { Text(song.title).font(.body.weight(.medium)).lineLimit(1); Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(minLength: 4); if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }; Image(systemName: "ellipsis").foregroundStyle(.tertiary).font(.caption) }.contentShape(Rectangle()) }.buttonStyle(.plain).padding(.vertical, 5)
+        Button { if let playbackCollection { player.play(song, in: playbackCollection) } else { player.play(song) } } label: { HStack(spacing: 12) { Artwork(data: song.artworkData); VStack(alignment: .leading, spacing: 3) { Text(song.title).font(.body.weight(.medium)).lineLimit(1); Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(minLength: 4); if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }; Image(systemName: "ellipsis").foregroundStyle(.tertiary).font(.caption) }.contentShape(Rectangle()) }.buttonStyle(.plain).padding(.vertical, 5)
         .modifier(TrackSwipeActions(song: song))
         .contextMenu {
             Button(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten", systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }
@@ -894,6 +907,8 @@ struct NowPlayingView: View {
     @State private var selectedQueueIDs = Set<UUID>()
     @State private var showingClearQueueConfirmation = false
     @State private var showingGenreEditor = false
+    @State private var showingPlaybackSettings = false
+    @State private var showingSleepTimer = false
 
     var body: some View {
         NavigationStack {
@@ -937,6 +952,17 @@ struct NowPlayingView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(player.current == nil)
+                        Button { showingSleepTimer = true } label: {
+                            HStack {
+                                Image(systemName: "moon.zzz")
+                                if let deadline = player.sleepDeadline {
+                                    Text(deadline, style: .timer).monospacedDigit()
+                                } else {
+                                    Text(player.sleepAfterCurrentSong ? "Stoppt nach diesem Titel" : "Sleep Timer")
+                                }
+                            }
+                        }
+                        .buttonStyle(.borderless)
                     }
                     .padding(.vertical, 18)
                 }
@@ -969,8 +995,13 @@ struct NowPlayingView: View {
             .sheet(isPresented: $showingGenreEditor) {
                 if let song = player.current { SongGenreEditorView(song: song) }
             }
+            .sheet(isPresented: $showingPlaybackSettings) { PlaybackSettingsView() }
+            .sheet(isPresented: $showingSleepTimer) { SleepTimerView() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Wiedergabeeinstellungen", systemImage: "slider.horizontal.3") { showingPlaybackSettings = true }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     if !player.queue.isEmpty { EditButton() }
                 }

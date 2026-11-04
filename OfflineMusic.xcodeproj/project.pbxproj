@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A0000000000000000000038 /* SmartPlaylists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000029 /* SmartPlaylists.swift */; };
+		1A0000000000000000000037 /* PlaybackOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000028 /* PlaybackOptions.swift */; };
 		1A0000000000000000000035 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000026 /* MusicCatalog.swift */; };
 
 		1A0000000000000000000036 /* LibraryManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000027 /* LibraryManagement.swift */; };
@@ -17,6 +19,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1A0000000000000000000029 /* SmartPlaylists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylists.swift; sourceTree = "<group>"; };
+		1A0000000000000000000028 /* PlaybackOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackOptions.swift; sourceTree = "<group>"; };
 		1A0000000000000000000026 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
 		1A0000000000000000000027 /* LibraryManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryManagement.swift; sourceTree = "<group>"; };
 		1A0000000000000000000007 /* OfflineMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = OfflineMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -54,6 +58,8 @@
 				1A0000000000000000000025 /* FolderImporter.swift */,
 				1A0000000000000000000026 /* MusicCatalog.swift */,
 				1A0000000000000000000027 /* LibraryManagement.swift */,
+				1A0000000000000000000028 /* PlaybackOptions.swift */,
+				1A0000000000000000000029 /* SmartPlaylists.swift */,
 			);
 			path = OfflineMusic;
 			sourceTree = "<group>";
@@ -133,6 +139,8 @@
 				1A0000000000000000000035 /* MusicCatalog.swift in Sources */,
 				1A0000000000000000000034 /* FolderImporter.swift in Sources */,
 				1A0000000000000000000036 /* LibraryManagement.swift in Sources */,
+				1A0000000000000000000037 /* PlaybackOptions.swift in Sources */,
+				1A0000000000000000000038 /* SmartPlaylists.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
