@@ -25,8 +25,12 @@ struct OfflineMusicApp: App {
     var isFavorite: Bool = false
     var artistIDs: [UUID] = []
     var genreIDs: [UUID] = []
-    init(title: String, artist: String = "Unknown Artist", album: String = "Unknown Album", duration: Double = 0, fileName: String, artworkData: Data? = nil) {
-        self.title = title; self.artist = artist; self.album = album; self.duration = duration; self.fileName = fileName; self.artworkData = artworkData
+    var importedGenre: String = ""
+    var originalGenreIDs: [UUID] = []
+    var inferredGenreIDs: [UUID] = []
+    var genreOverrideID: UUID?
+    init(title: String, artist: String = "Unknown Artist", album: String = "Unknown Album", duration: Double = 0, fileName: String, artworkData: Data? = nil, importedGenre: String = "") {
+        self.title = title; self.artist = artist; self.album = album; self.duration = duration; self.fileName = fileName; self.artworkData = artworkData; self.importedGenre = importedGenre
     }
 }
 
@@ -54,6 +58,7 @@ struct OfflineMusicApp: App {
     var id: UUID = UUID()
     var name: String = ""
     var aliases: [String] = []
+    var matchFields: [String] = ["artist", "title", "album", "fileName"]
     var genreID: UUID?
     init(name: String, aliases: [String] = [], genreID: UUID? = nil) {
         self.name = name
@@ -161,6 +166,24 @@ struct PlaybackSession: Codable, Equatable {
 
     func removeQueue(ids: Set<UUID>) {
         queue.removeAll { ids.contains($0.id) }
+        saveSessionNow()
+    }
+
+    func removeSongs(ids: Set<UUID>) {
+        guard !ids.isEmpty else { return }
+        queue.removeAll { ids.contains($0.id) }
+        library.removeAll { ids.contains($0.id) }
+        if let current, ids.contains(current.id) {
+            audio?.stop()
+            audio = nil
+            timer?.invalidate()
+            self.current = nil
+            isPlaying = false
+            progress = 0
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        } else if let current, let index = library.firstIndex(where: { $0.id == current.id }) {
+            currentIndex = index
+        }
         saveSessionNow()
     }
 

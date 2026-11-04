@@ -5,6 +5,18 @@ import SwiftUI
 // A deliberately broad starter classification; the user's assignments take precedence.
 @MainActor
 enum MusicCatalog {
+    enum MatchField: String, CaseIterable, Identifiable {
+        case artist, title, album, fileName
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .artist: return "Künstler"
+            case .title: return "Titel"
+            case .album: return "Album"
+            case .fileName: return "Dateiname"
+            }
+        }
+    }
     static let starters: [(String, [String])] = [
         ("Rock", ["Queen", "AC/DC", "The Rolling Stones", "Led Zeppelin", "Foo Fighters", "Nirvana"]),
         ("Hip-Hop", ["Eminem", "Tupac Shakur", "The Notorious B.I.G.", "Kendrick Lamar", "Nas", "Snoop Dogg"]),
@@ -24,7 +36,8 @@ enum MusicCatalog {
     ]
 
     static func normalized(_ text: String) -> String {
-        text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+        text.lowercased(with: Locale(identifier: "en_US_POSIX"))
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { !$0.isEmpty }.joined(separator: " ")
     }
@@ -36,6 +49,31 @@ enum MusicCatalog {
 
     static func matches(_ profile: ArtistProfile, text: String) -> Bool {
         ([profile.name] + profile.aliases).contains { containsName($0, in: text) }
+    }
+
+    static func matches(_ profile: ArtistProfile, song: Song) -> Bool {
+        profile.matchFields.contains { field in
+            let value: String
+            switch MatchField(rawValue: field) {
+            case .artist: value = song.artist
+            case .title: value = song.title
+            case .album: value = song.album
+            case .fileName: value = song.fileName
+            case nil: return false
+            }
+            return matches(profile, text: value)
+        }
+    }
+
+    static func tracks(in playlist: Playlist, songs: [Song], artists: [ArtistProfile]) -> [Song] {
+        if playlist.artistName.isEmpty {
+            let lookup = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
+            return playlist.songIDs.compactMap { lookup[$0] }
+        }
+        if let profile = artists.first(where: { normalized($0.name) == normalized(playlist.artistName) }) {
+            return songs.filter { matches(profile, song: $0) }
+        }
+        return songs.filter { containsName(playlist.artistName, in: $0.artist) }
     }
 
     static func seed(in context: ModelContext) throws {
@@ -69,20 +107,22 @@ enum MusicCatalog {
         try reclassify(in: context)
     }
 
-    static func classify(_ song: Song, artists: [ArtistProfile]) {
-        let metadataMatches = artists.filter { matches($0, text: song.artist) }
+    static func classify(_ song: Song, artists: [ArtistProfile], genres: [MusicGenre] = []) {
         let unknown = ["", "unknown artist", "unbekannter kunstler"].contains(normalized(song.artist))
-        // Downloads sometimes use an uploader name instead of the musician.
-        // If that metadata is unknown to the catalog, also check the title/file name.
-        let found = metadataMatches.isEmpty ? artists.filter { matches($0, text: song.title + " " + song.fileName) } : metadataMatches
+        let found = artists.filter { matches($0, song: song) }
         song.artistIDs = found.map(\.id)
-        song.genreIDs = Array(Set(found.compactMap(\.genreID)))
+        song.inferredGenreIDs = Array(Set(found.compactMap(\.genreID)))
+        let importedIDs = genres.filter { normalized($0.name) == normalized(song.importedGenre) }.map(\.id)
+        if song.originalGenreIDs.isEmpty, !importedIDs.isEmpty { song.originalGenreIDs = importedIDs }
+        if let override = song.genreOverrideID { song.genreIDs = [override] }
+        else { song.genreIDs = song.originalGenreIDs.isEmpty ? song.inferredGenreIDs : song.originalGenreIDs }
         if unknown, !found.isEmpty { song.artist = found.map(\.name).sorted().joined(separator: ", ") }
     }
 
     static func reclassify(in context: ModelContext) throws {
         let artists = try context.fetch(FetchDescriptor<ArtistProfile>())
-        for song in try context.fetch(FetchDescriptor<Song>()) { classify(song, artists: artists) }
+        let genres = try context.fetch(FetchDescriptor<MusicGenre>())
+        for song in try context.fetch(FetchDescriptor<Song>()) { classify(song, artists: artists, genres: genres) }
         try context.save()
     }
 }
@@ -199,6 +239,7 @@ struct ArtistEditorView: View {
     @State private var newGenre = ""
     @State private var errorMessage: String?
     @State private var initialized = false
+    @State private var matchFields = Set(MusicCatalog.MatchField.allCases.map(\.rawValue))
 
     var body: some View {
         NavigationStack {
@@ -209,6 +250,7 @@ struct ArtistEditorView: View {
                             name = profile.name
                             aliases = profile.aliases.joined(separator: ", ")
                             genreID = profile.genreID
+                            matchFields = Set(profile.matchFields)
                         }
                     } label: { Label("Bekannte Künstler durchsuchen", systemImage: "magnifyingglass") }
                     TextField("Künstlername", text: $name)
@@ -216,6 +258,18 @@ struct ArtistEditorView: View {
                     TextField("Weitere Schreibweisen, mit Komma trennen", text: $aliases)
                         .autocorrectionDisabled()
                 }
+                Section {
+                    ForEach(MusicCatalog.MatchField.allCases) { field in
+                        Toggle(field.label, isOn: Binding(
+                            get: { matchFields.contains(field.rawValue) },
+                            set: { enabled in
+                                if enabled { matchFields.insert(field.rawValue) }
+                                else { matchFields.remove(field.rawValue) }
+                            }
+                        ))
+                    }
+                } header: { Text("Namen und Schreibweisen suchen in") }
+                footer: { Text("Ein Treffer in einem ausgewählten Feld genügt. Groß- und Kleinschreibung, Akzente und Satzzeichen werden beim Vergleich vereinheitlicht.") }
                 Section {
                     NavigationLink {
                         GenrePickerView(selection: $genreID)
@@ -241,7 +295,7 @@ struct ArtistEditorView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern", action: save)
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (genreID == nil && newGenre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                        .disabled(matchFields.isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (genreID == nil && newGenre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
                 }
             }
             .onAppear {
@@ -250,11 +304,13 @@ struct ArtistEditorView: View {
                 name = artist?.name ?? ""
                 aliases = artist?.aliases.joined(separator: ", ") ?? ""
                 genreID = artist?.genreID ?? initialGenreID
+                matchFields = Set(artist?.matchFields ?? MusicCatalog.MatchField.allCases.map(\.rawValue))
             }
             .onChange(of: name) { _, value in
                 if artist == nil, let known = artists.first(where: { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(value) }) {
                     genreID = known.genreID
                     aliases = known.aliases.joined(separator: ", ")
+                    matchFields = Set(known.matchFields)
                 }
             }
             .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -288,6 +344,7 @@ struct ArtistEditorView: View {
             if MusicCatalog.normalized(oldName) != MusicCatalog.normalized(cleanName),
                !profile.aliases.contains(oldName) { profile.aliases.append(oldName) }
             profile.genreID = selectedID
+            profile.matchFields = matchFields.sorted()
             let playlists = try context.fetch(FetchDescriptor<Playlist>())
             for playlist in playlists where MusicCatalog.normalized(playlist.artistName) == MusicCatalog.normalized(oldName) {
                 playlist.artistName = cleanName

@@ -45,6 +45,29 @@ try MainActor.assumeIsolated {
     precondition(!uploader.artistIDs.isEmpty)
     precondition(MusicCatalog.containsName("Sven Väth", in: "SVEN VATH - Live"))
 
+    let fieldArtist = ArtistProfile(name: "Test Musiker", aliases: ["TÉST ALIAS"], genreID: hiphop.id)
+    context.insert(fieldArtist)
+    let albumMatch = Song(title: "Ein Song", artist: "Music Channel", album: "test alias – COLLECTION", fileName: "album.mp3")
+    fieldArtist.matchFields = ["album"]
+    MusicCatalog.classify(albumMatch, artists: [fieldArtist])
+    precondition(albumMatch.artistIDs == [fieldArtist.id], "Album matching must normalize case, accents and punctuation")
+    fieldArtist.matchFields = ["title"]
+    MusicCatalog.classify(albumMatch, artists: [fieldArtist])
+    precondition(albumMatch.artistIDs.isEmpty, "Disabled fields must not contribute matches")
+    let titleMatch = Song(title: "TEST MUSIKER - Live", artist: "Queen", fileName: "title.mp3")
+    MusicCatalog.classify(titleMatch, artists: [fieldArtist] + artists)
+    precondition(titleMatch.artistIDs.contains(fieldArtist.id), "An existing artist metadata match must not hide a title match")
+    let artistPlaylist = Playlist(name: "Test Playlist", artistName: "TEST MUSIKER")
+    precondition(MusicCatalog.tracks(in: artistPlaylist, songs: [titleMatch, albumMatch], artists: [fieldArtist]).map(\.id) == [titleMatch.id])
+    let manualPlaylist = Playlist(name: "Manual")
+    manualPlaylist.songIDs = [albumMatch.id, titleMatch.id]
+    precondition(MusicCatalog.tracks(in: manualPlaylist, songs: [titleMatch, albumMatch], artists: []).map(\.id) == manualPlaylist.songIDs)
+    try context.save()
+    let savedFieldArtist = try context.fetch(FetchDescriptor<ArtistProfile>()).first { $0.id == fieldArtist.id }
+    precondition(savedFieldArtist?.matchFields == ["title"])
+    context.delete(fieldArtist)
+    try context.save()
+
     let customGenre = MusicGenre(name: "Mein Genre")
     context.insert(customGenre)
     let custom = ArtistProfile(name: "Mein Künstler", genreID: customGenre.id)
@@ -61,7 +84,7 @@ try MainActor.assumeIsolated {
     let savedGenres = try context.fetch(FetchDescriptor<MusicGenre>())
     precondition(savedArtists.count == artists.count + 1)
     precondition(savedGenres.count == genres.count + 1)
-    print("PASS: catalog seeding, aliases, filename recognition, boundaries, collaborations, custom genres and reclassification")
+    print("PASS: catalog seeding, normalization, configurable match fields, playlist membership/order, aliases, custom genres and reclassification")
 }
 """#
 let process = Process()

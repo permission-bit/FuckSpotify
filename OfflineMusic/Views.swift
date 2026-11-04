@@ -22,6 +22,7 @@ struct RootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if player.current != nil { Color.clear.frame(height: 72) }
         }
+        .contentMargins(.bottom, player.current == nil ? 16 : 104, for: .scrollContent)
         .overlay(alignment: .bottom) {
             if player.current != nil {
                 MiniPlayer()
@@ -96,6 +97,7 @@ struct LibraryView: View {
     @State private var selectedIDs = Set<UUID>()
     @State private var showingActions = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingDuplicates = false
 
     var body: some View {
         NavigationStack {
@@ -138,6 +140,8 @@ struct LibraryView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     if editMode.isEditing, !selectedIDs.isEmpty {
                         Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Button("Duplikate", systemImage: "doc.on.doc") { showingDuplicates = true }
                     }
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -153,6 +157,7 @@ struct LibraryView: View {
             .sheet(isPresented: $showingActions) {
                 LibrarySelectionActions(songs: songs.filter { selectedIDs.contains($0.id) }, onFinish: finishSelection)
             }
+            .sheet(isPresented: $showingDuplicates) { DuplicateManagerView() }
             .confirmationDialog("Bibliothekseinträge löschen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
                 Button("Löschen", role: .destructive) {
                     songs.filter { selectedIDs.contains($0.id) }.forEach(context.delete)
@@ -175,6 +180,7 @@ struct LibraryView: View {
 
 struct SearchView: View {
     @Query(sort: \Song.title) private var songs: [Song]
+    @Query(sort: \MusicGenre.name) private var genres: [MusicGenre]
     @State private var query = ""
 
     var body: some View {
@@ -186,12 +192,20 @@ struct SearchView: View {
         }
     }
 
-    private var filtered: [Song] { query.isEmpty ? songs : songs.filter { "\($0.title) \($0.artist) \($0.album)".localizedCaseInsensitiveContains(query) } }
+    private var filtered: [Song] {
+        query.isEmpty ? songs : songs.filter { song in
+            let genreNames = genres.filter { song.genreIDs.contains($0.id) }.map(\.name).joined(separator: " ")
+            return "\(song.title) \(song.artist) \(song.album) \(genreNames)".localizedCaseInsensitiveContains(query)
+        }
+    }
 }
 
 struct PlaylistsView: View {
+    private enum Route: Hashable { case playlist(UUID), catalog }
+    @State private var path: [Route] = []
     @Query(sort: \Playlist.name) private var playlists: [Playlist]
     @Query(sort: \Song.title) private var songs: [Song]
+    @Query private var artists: [ArtistProfile]
     @Environment(\.modelContext) private var context
     @State private var showingPlaylistAlert = false
     @State private var showingArtistAlert = false
@@ -202,16 +216,16 @@ struct PlaylistsView: View {
     @State private var showingDeleteConfirmation = false
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List(selection: $selectedIDs) {
                 Section {
-                    NavigationLink { GenreLibraryView() } label: {
+                    NavigationLink(value: Route.catalog) {
                         Label("Genres & Künstler", systemImage: "guitars")
                     }
                 }
                 Section("Deine Playlists") {
                     ForEach(filteredPlaylists) { playlist in
-                        NavigationLink { PlaylistDetail(playlist: playlist) } label: {
+                        NavigationLink(value: Route.playlist(playlist.id)) {
                             HStack(spacing: 12) {
                                 PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist))
                                 VStack(alignment: .leading, spacing: 3) {
@@ -230,12 +244,24 @@ struct PlaylistsView: View {
                     .onDelete { indexes in
                         let visible = filteredPlaylists
                         indexes.forEach { context.delete(visible[$0]) }
+                    }
                 }
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, $editMode)
             .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             .navigationTitle("Playlists")
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .catalog: GenreLibraryView()
+                case .playlist(let id):
+                    if let playlist = playlists.first(where: { $0.id == id }) {
+                        PlaylistDetail(playlist: playlist)
+                    } else {
+                        ContentUnavailableView("Playlist nicht mehr vorhanden", systemImage: "music.note.list")
+                    }
+                }
+            }
             .searchable(text: $query, prompt: "Playlists oder Künstler suchen")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -277,8 +303,6 @@ struct PlaylistsView: View {
         }
     }
 
-}
-
     private var filteredPlaylists: [Playlist] {
         let search = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return search.isEmpty ? playlists : playlists.filter {
@@ -287,8 +311,7 @@ struct PlaylistsView: View {
     }
 
     private func artworkData(for playlist: Playlist) -> Data? {
-        guard let firstID = playlist.songIDs.first else { return nil }
-        return songs.first(where: { $0.id == firstID })?.artworkData
+        MusicCatalog.tracks(in: playlist, songs: songs, artists: artists).compactMap(\.artworkData).first
     }
 
 }
@@ -298,12 +321,14 @@ struct PlaylistEditorView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Song.title) private var songs: [Song]
+    @Query private var artists: [ArtistProfile]
     @State private var name = ""
     @State private var query = ""
     @State private var selectedIDs: Set<UUID> = []
     @State private var coverData: Data?
     @State private var photoItem: PhotosPickerItem?
     @State private var showingFileImporter = false
+    @State private var showingSongCovers = false
     @State private var errorMessage: String?
 
     init(playlist: Playlist? = nil) {
@@ -325,10 +350,13 @@ struct PlaylistEditorView: View {
                                 Label("Fotos auswählen", systemImage: "photo.on.rectangle")
                             }
                             Button("Datei auswählen", systemImage: "folder") { showingFileImporter = true }
+                            Button("Cover eines Playlist-Titels", systemImage: "music.note") { showingSongCovers = true }
+                                .disabled(coverSongs.isEmpty)
                             if coverData != nil {
                                 Button("Cover entfernen", systemImage: "xmark.circle", role: .destructive) { coverData = nil; photoItem = nil }
                             }
                         }
+                        .buttonStyle(.borderless)
                     }
                 }
                 if playlist?.artistName.isEmpty ?? true {
@@ -383,6 +411,27 @@ struct PlaylistEditorView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingSongCovers) {
+                NavigationStack {
+                    List(coverSongs) { song in
+                        Button {
+                            coverData = song.artworkData.flatMap(resizedCoverData)
+                            photoItem = nil
+                            showingSongCovers = false
+                        } label: {
+                            HStack(spacing: 12) {
+                                Artwork(data: song.artworkData)
+                                VStack(alignment: .leading) {
+                                    Text(song.title).foregroundStyle(.primary)
+                                    Text(song.artist).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Song-Cover auswählen")
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { showingSongCovers = false } } }
+                }
+            }
             .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
                 guard case .success(let urls) = result, let url = urls.first else { return }
                 let accessed = url.startAccessingSecurityScopedResource()
@@ -397,6 +446,16 @@ struct PlaylistEditorView: View {
         return search.isEmpty ? songs : songs.filter {
             "\($0.title) \($0.artist) \($0.album)".localizedStandardContains(search)
         }
+    }
+
+    private var coverSongs: [Song] {
+        let tracks: [Song]
+        if let playlist, !playlist.artistName.isEmpty {
+            tracks = MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
+        } else {
+            tracks = songs.filter { selectedIDs.contains($0.id) }
+        }
+        return tracks.filter { $0.artworkData != nil }
     }
 
     private func savePlaylist() {
@@ -434,6 +493,7 @@ struct PlaylistDetail: View {
     @State private var selectedIDs = Set<UUID>()
     @State private var showingEditor = false
     @State private var showingClearSelection = false
+    @State private var showingArtistEditor = false
 
     init(playlist: Playlist) { self.playlist = playlist; _songs = Query() }
 
@@ -441,7 +501,7 @@ struct PlaylistDetail: View {
         List {
             Section {
                 HStack(spacing: 16) {
-                    PlaylistArtwork(playlist: playlist, fallbackData: regularSongs.first?.artworkData, size: 92)
+                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.compactMap(\.artworkData).first, size: 92)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(playlist.name).font(.title3.bold())
                         Text(playlist.artistName.isEmpty ? "\(regularSongs.count) Titel" : "Artist playlist · \(artistSongs.count) Titel")
@@ -493,7 +553,12 @@ struct PlaylistDetail: View {
                 if editMode.isEditing, !selectedIDs.isEmpty {
                     Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
                 } else {
-                    Button("Bearbeiten", systemImage: "pencil") { showingEditor = true }
+                    Menu {
+                        Button("Playlist und Cover bearbeiten", systemImage: "pencil") { showingEditor = true }
+                        if artistProfile != nil {
+                            Button("Künstlerzuordnung bearbeiten", systemImage: "person.crop.circle") { showingArtistEditor = true }
+                        }
+                    } label: { Label("Bearbeiten", systemImage: "pencil") }
                 }
             }
             ToolbarItem(placement: .bottomBar) {
@@ -503,6 +568,9 @@ struct PlaylistDetail: View {
             }
         }
         .sheet(isPresented: $showingEditor) { PlaylistEditorView(playlist: playlist) }
+        .sheet(isPresented: $showingArtistEditor) {
+            if let profile = artistProfile { ArtistEditorView(artist: profile) }
+        }
         .confirmationDialog("Titel aus Playlist entfernen?", isPresented: $showingClearSelection, titleVisibility: .visible) {
             Button("Entfernen", role: .destructive) {
                 playlist.songIDs.removeAll { selectedIDs.contains($0) }
@@ -518,12 +586,13 @@ struct PlaylistDetail: View {
         return playlist.songIDs.compactMap { lookup[$0] }
     }
     private var artistSongs: [Song] {
-        let profile = artists.first { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(playlist.artistName) }
-        return songs.filter { song in
-            if let profile { return song.artistIDs.contains(profile.id) }
-            return MusicCatalog.containsName(playlist.artistName, in: song.artist)
-        }
+        MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
     }
+    private var artistProfile: ArtistProfile? {
+        guard !playlist.artistName.isEmpty else { return nil }
+        return artists.first { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(playlist.artistName) }
+    }
+    private var displayedSongs: [Song] { playlist.artistName.isEmpty ? regularSongs : artistSongs }
 
     private func move(from offsets: IndexSet, to destination: Int) {
         var visibleIDs = regularSongs.map(\.id)
@@ -682,11 +751,33 @@ struct LibrarySelectionActions: View {
 }
 
 struct SongRow: View {
-    let song: Song; @EnvironmentObject private var player: AudioPlayer; @Environment(\.modelContext) private var context; @Query(sort: \Playlist.name) private var playlists: [Playlist]
+    let song: Song
+    @EnvironmentObject private var player: AudioPlayer
+    @Environment(\.modelContext) private var context
+    @Query(sort: \Playlist.name) private var playlists: [Playlist]
+    @State private var showingGenreEditor = false
     var body: some View {
         Button { player.play(song) } label: { HStack(spacing: 12) { Artwork(data: song.artworkData); VStack(alignment: .leading, spacing: 3) { Text(song.title).font(.body.weight(.medium)).lineLimit(1); Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(minLength: 4); if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }; Image(systemName: "ellipsis").foregroundStyle(.tertiary).font(.caption) }.contentShape(Rectangle()) }.buttonStyle(.plain).padding(.vertical, 5)
         .modifier(TrackSwipeActions(song: song))
-        .contextMenu { Button(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten", systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }; Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }; Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }; if !playlists.filter({ $0.artistName.isEmpty }).isEmpty { Menu("In Playlist speichern", systemImage: "plus.rectangle.on.folder") { ForEach(playlists.filter { $0.artistName.isEmpty }) { playlist in Button(playlist.name) { if !playlist.songIDs.contains(song.id) { playlist.songIDs.append(song.id) } } } } }; Divider(); Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(song) } }
+        .contextMenu {
+            Button(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten", systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }
+            Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
+            if song.genreOverrideID != nil {
+                Button("Originalgenre wiederherstellen", systemImage: "arrow.uturn.backward") { SongGenreStore.restore(song, context: context) }
+            }
+            Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }
+            Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }
+            if !playlists.filter({ $0.artistName.isEmpty }).isEmpty {
+                Menu("In Playlist speichern", systemImage: "plus.rectangle.on.folder") {
+                    ForEach(playlists.filter { $0.artistName.isEmpty }) { playlist in
+                        Button(playlist.name) { if !playlist.songIDs.contains(song.id) { playlist.songIDs.append(song.id) } }
+                    }
+                }
+            }
+            Divider()
+            Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(song) }
+        }
+        .sheet(isPresented: $showingGenreEditor) { SongGenreEditorView(song: song) }
     }
 }
 
@@ -918,6 +1009,7 @@ enum Importer {
             let titleValue = await metadataValue(.commonIdentifierTitle)
             let artistValue = await metadataValue(.commonIdentifierArtist)
             let albumValue = await metadataValue(.commonIdentifierAlbumName)
+            let importedGenre = await metadataValue(.commonIdentifierType)
             let title = titleValue.isEmpty ? source.deletingPathExtension().lastPathComponent : titleValue
             let artist = artistValue.isEmpty ? "Unbekannter Künstler" : artistValue
             let album = albumValue.isEmpty ? "Unbekanntes Album" : albumValue
@@ -925,9 +1017,10 @@ enum Importer {
             let artItem = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: .commonIdentifierArtwork).first
             var art: Data?
             if let artItem { art = try? await artItem.load(.dataValue) }
-            let song = Song(title: title, artist: artist, album: album, duration: duration.isFinite ? duration : 0, fileName: destination.lastPathComponent, artworkData: art)
+            let song = Song(title: title, artist: artist, album: album, duration: duration.isFinite ? duration : 0, fileName: destination.lastPathComponent, artworkData: art, importedGenre: importedGenre)
             let profiles = (try? context.fetch(FetchDescriptor<ArtistProfile>())) ?? []
-            MusicCatalog.classify(song, artists: profiles)
+            let genres = (try? context.fetch(FetchDescriptor<MusicGenre>())) ?? []
+            MusicCatalog.classify(song, artists: profiles, genres: genres)
             context.insert(song)
         }
     }
