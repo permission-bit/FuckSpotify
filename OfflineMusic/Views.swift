@@ -379,10 +379,13 @@ struct MiniPlayer: View {
 struct NowPlayingView: View {
     @EnvironmentObject private var player: AudioPlayer
     @Environment(\.dismiss) private var dismiss
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedQueueIDs = Set<UUID>()
+    @State private var showingClearQueueConfirmation = false
 
     var body: some View {
         NavigationStack {
-            List {
+            List(selection: $selectedQueueIDs) {
                 Section {
                     VStack(spacing: 24) {
                         Artwork(data: player.current?.artworkData)
@@ -405,21 +408,55 @@ struct NowPlayingView: View {
                     }
                     .padding(.vertical, 18)
                 }
-                .listRowBackground(Color.clear)
+                .listRowBackground(appTint.opacity(0.12))
+                .listRowSeparator(.hidden)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Wird wiedergegeben: \(player.current?.title ?? String())")
                 if !player.queue.isEmpty {
-                    Section("Als Nächstes") {
-                        ForEach(player.queue) { SongRow(song: $0) }
-                            .onDelete { offsets in
-                                let queued = player.queue
-                                offsets.forEach { player.removeFromQueue(queued[$0]) }
-                            }
+                    Section {
+                        ForEach(player.queue) { song in
+                            QueueTrackRow(song: song)
+                                .tag(song.id)
+                        }
+                        .onMove(perform: player.moveQueue)
+                        .onDelete(perform: player.removeQueue)
+                    } header: {
+                        HStack {
+                            Label("Als Nächstes · \(player.queue.count)", systemImage: "text.line.first.and.arrowtriangle.forward")
+                            Spacer()
+                            Button("Leeren", role: .destructive) { showingClearQueueConfirmation = true }
+                                .font(.subheadline.weight(.semibold))
+                        }
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .environment(\.editMode, $editMode)
+            .animation(.easeInOut(duration: 0.2), value: player.queue.map(\.id))
             .navigationTitle("Wiedergabe")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { Button("Fertig") { dismiss() } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !player.queue.isEmpty { EditButton() }
+                }
+                ToolbarItem(placement: .topBarTrailing) { Button("Fertig") { dismiss() } }
+                ToolbarItem(placement: .bottomBar) {
+                    if editMode.isEditing, !selectedQueueIDs.isEmpty {
+                        Button("Auswahl entfernen", role: .destructive) {
+                            player.removeQueue(ids: selectedQueueIDs)
+                            selectedQueueIDs.removeAll()
+                        }
+                    }
+                }
+            }
+            .confirmationDialog("Warteschlange leeren?", isPresented: $showingClearQueueConfirmation, titleVisibility: .visible) {
+                Button("Kommende Titel entfernen", role: .destructive) {
+                    player.clearQueue()
+                    selectedQueueIDs.removeAll()
+                }
+            } message: {
+                Text("Der gerade spielende Titel läuft weiter.")
+            }
         }
     }
 
@@ -429,7 +466,7 @@ struct NowPlayingView: View {
                 Image(systemName: "backward.end.fill").font(.title2)
             }
             .accessibilityLabel("Vorheriger Titel")
-            Button { player.shuffle.toggle() } label: {
+            Button { player.toggleShuffle() } label: {
                 Image(systemName: "shuffle").foregroundStyle(player.shuffle ? appTint : .primary)
             }
             .accessibilityLabel("Zufallswiedergabe")
@@ -443,7 +480,7 @@ struct NowPlayingView: View {
                 Image(systemName: "forward.end.fill").font(.title2)
             }
             .accessibilityLabel("Nächster Titel")
-            Button { player.repeatMode = (player.repeatMode + 1) % 2 } label: {
+            Button { player.cycleRepeatMode() } label: {
                 Image(systemName: player.repeatMode == 1 ? "repeat.1" : "repeat")
             }
             .accessibilityLabel("Titel wiederholen")
@@ -453,6 +490,30 @@ struct NowPlayingView: View {
 
     private func time(_ seconds: Double) -> String {
         "\(Int(seconds) / 60):\(String(format: "%02d", Int(seconds) % 60))"
+    }
+}
+
+struct QueueTrackRow: View {
+    let song: Song
+    @EnvironmentObject private var player: AudioPlayer
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Artwork(data: song.artworkData)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(song.title).font(.body.weight(.medium)).lineLimit(1)
+                Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button("Entfernen", systemImage: "trash", role: .destructive) { player.removeFromQueue(song) }
+        }
+        .accessibilityLabel("Kommender Titel: \(song.title), \(song.artist)")
     }
 }
 
