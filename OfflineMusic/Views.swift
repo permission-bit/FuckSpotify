@@ -878,6 +878,20 @@ struct NowPlayingView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         controls
+                        HStack(spacing: 48) {
+                            Button { player.seekBy(-15) } label: {
+                                Image(systemName: "gobackward.15").font(.title2)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .accessibilityLabel("15 Sekunden zurück")
+                            Button { player.seekBy(15) } label: {
+                                Image(systemName: "goforward.15").font(.title2)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .accessibilityLabel("15 Sekunden vor")
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(player.current == nil)
                     }
                     .padding(.vertical, 18)
                 }

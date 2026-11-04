@@ -369,10 +369,11 @@ struct PlaybackSession: Codable, Equatable {
         c.playCommand.addTarget { [weak self] _ in self?.resumeFromRemote(); return .success }
         c.pauseCommand.addTarget { [weak self] _ in self?.pauseFromRemote(); return .success }
         c.changePlaybackPositionCommand.addTarget { [weak self] event in guard let e = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }; self?.seek(e.positionTime / (self?.audio?.duration ?? 1)); return .success }
-        c.skipForwardCommand.preferredIntervals = [15]
-        c.skipForwardCommand.addTarget { [weak self] _ in self?.seekBy(15); return .success }
-        c.skipBackwardCommand.preferredIntervals = [15]
-        c.skipBackwardCommand.addTarget { [weak self] _ in self?.seekBy(-15); return .success }
+        // iOS shares these commands between Lock Screen and Control Center.
+        // Interval commands take the transport slots away from track navigation.
+        c.skipForwardCommand.isEnabled = false
+        c.skipBackwardCommand.isEnabled = false
+        c.changePlaybackPositionCommand.isEnabled = true
         c.nextTrackCommand.isEnabled = true
         c.nextTrackCommand.addTarget { [weak self] _ in self?.next(); return .success }
         c.previousTrackCommand.isEnabled = true
