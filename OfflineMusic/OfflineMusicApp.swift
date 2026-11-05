@@ -551,7 +551,9 @@ struct PlaybackSession: Codable, Equatable {
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        // Two UI samples per second keep progress responsive without invalidating
+        // every tab and list four times per second.
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.updateProgress() }
         }
     }

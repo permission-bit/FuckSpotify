@@ -116,41 +116,26 @@ struct LegacyMiniPlayerInset: ViewModifier {
     @EnvironmentObject private var player: AudioPlayer
     let onOpen: () -> Void
     @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-        } else {
-            content.safeAreaInset(edge: .bottom, spacing: 8) {
-                if player.current != nil {
-                    MiniPlayer(onOpen: onOpen).padding(.horizontal, 12).padding(.bottom, 8)
-                }
+        content
+            // Keep the final row reachable above the floating player and tab bar.
+            .contentMargins(.bottom, player.current == nil ? 16 : 96, for: .scrollContent)
+            .safeAreaInset(edge: .bottom, spacing: 8) {
+            if player.current != nil {
+                MiniPlayer(onOpen: onOpen)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
             }
-        }
+            }
     }
 }
 
 struct ModernMiniPlayerAccessory: ViewModifier {
-    @EnvironmentObject private var player: AudioPlayer
     let onOpen: () -> Void
-    @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 26.1, *) {
-            content.tabViewBottomAccessory(isEnabled: player.current != nil) { MiniPlayer(onOpen: onOpen) }
-        } else if #available(iOS 26.0, *) {
-            content.tabViewBottomAccessory {
-                if player.current != nil { MiniPlayer(onOpen: onOpen) }
-            }
-        } else {
-            content
-        }
-    }
+    func body(content: Content) -> some View { content }
 }
 
 struct MiniPlayerSurface: ViewModifier {
-    @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            // The native tab accessory supplies its own Liquid Glass surface.
-            content
-        } else {
-            content.musicGlass(cornerRadius: 22)
-        }
+    func body(content: Content) -> some View {
+        content.musicGlass(cornerRadius: 22)
     }
 }

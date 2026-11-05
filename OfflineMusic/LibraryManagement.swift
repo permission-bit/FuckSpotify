@@ -356,7 +356,13 @@ struct DuplicateManagerView: View {
             .navigationTitle("Duplikate")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Fertig") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) { Button("Scannen", systemImage: "arrow.clockwise") { scan() }.disabled(isScanning) }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button(LocalizedStringKey(allDuplicateRemovalIDs.isSubset(of: removalIDs) && !allDuplicateRemovalIDs.isEmpty ? "Auswahl aufheben" : "Alle auswählen"), systemImage: allDuplicateRemovalIDs.isSubset(of: removalIDs) && !allDuplicateRemovalIDs.isEmpty ? "checkmark.circle" : "checkmark.circle.fill") {
+                        toggleAllDuplicates()
+                    }
+                    .disabled(isScanning || allDuplicateRemovalIDs.isEmpty)
+                    Button("Scannen", systemImage: "arrow.clockwise") { scan() }.disabled(isScanning)
+                }
                 ToolbarItem(placement: .bottomBar) {
                     Button("Markierte löschen (\(removalIDs.count))", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
                         .disabled(removalIDs.isEmpty || isScanning)
@@ -449,6 +455,24 @@ struct DuplicateManagerView: View {
         guard let song = songs.first(where: { $0.id == record.id }) else { return }
         if player.current?.id == record.id { player.toggle() }
         else { player.play(song) }
+    }
+
+    private var allDuplicateRemovalIDs: Set<UUID> {
+        Set(groups.flatMap { group in
+            let keepID = keepIDs[group.id] ?? group.records.first?.id
+            return group.records.filter { $0.id != keepID && $0.isAvailable && $0.isUnchanged }.map(\.id)
+        })
+    }
+
+    private func toggleAllDuplicates() {
+        if allDuplicateRemovalIDs.isSubset(of: removalIDs) {
+            removalIDs.subtract(allDuplicateRemovalIDs)
+        } else {
+            removalIDs.formUnion(allDuplicateRemovalIDs)
+            for group in groups {
+                if let keepID = keepIDs[group.id] { removalIDs.remove(keepID) }
+            }
+        }
     }
 
     private func deleteMarked() {

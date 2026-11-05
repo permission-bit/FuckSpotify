@@ -18,12 +18,24 @@ struct RootView: View {
     @EnvironmentObject private var player: AudioPlayer
     var body: some View {
         TabView {
-            HomeView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Start", systemImage: "house.fill") }
-            LibraryView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Bibliothek", systemImage: "music.note.list") }
-            SearchView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Suche", systemImage: "magnifyingglass") }
-            PlaylistsView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
+            HomeView().tabItem { Label("Start", systemImage: "house.fill") }
+            LibraryView().tabItem { Label("Bibliothek", systemImage: "music.note.list") }
+            SearchView().tabItem { Label("Suche", systemImage: "magnifyingglass") }
+            PlaylistsView().tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
         }
-        .modifier(ModernMiniPlayerAccessory { showingNowPlaying = true })
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if player.current != nil {
+                Color.clear.frame(height: 88)
+            }
+        }
+        .contentMargins(.bottom, player.current == nil ? 16 : 104, for: .scrollContent)
+        .overlay(alignment: .bottom) {
+            if player.current != nil {
+                MiniPlayer(onOpen: { showingNowPlaying = true })
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 78)
+            }
+        }
         .musicScreen()
         .tint(appTint)
         .environmentObject(macConnection)
@@ -988,12 +1000,18 @@ struct MiniPlayer: View {
                 .accessibilityLabel(Text("\(player.current?.title ?? ""), \(MetadataText.artist(player.current?.artist ?? ""))"))
                 .accessibilityHint("Player öffnen")
 
+                Button { player.previous() } label: {
+                    Image(systemName: "backward.fill")
+                        .font(.subheadline.weight(.semibold)).frame(width: 40, height: 44)
+                }
+                    .accessibilityLabel("Vorheriger Titel")
+
                 Button { player.toggle() } label: {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title3.weight(.semibold)).frame(width: 44, height: 44)
+                        .font(.title3.weight(.semibold)).frame(width: 40, height: 44)
                 }
                     .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Wiedergabe"))
-                Button { player.next() } label: { Image(systemName: "forward.fill").frame(width: 44, height: 44) }
+                Button { player.next() } label: { Image(systemName: "forward.fill").frame(width: 40, height: 44) }
                     .accessibilityLabel("Nächster Titel")
             }
             .padding(.horizontal, 10)
@@ -1017,17 +1035,15 @@ struct NowPlayingView: View {
     @State private var showingPlaybackSettings = false
     @State private var showingSleepTimer = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         NavigationStack {
             List(selection: $selectedQueueIDs) {
                 Section {
                     VStack(spacing: 20) {
-                        GeometryReader { geometry in
-                            Artwork(data: player.current?.artworkData, size: geometry.size.width)
-                        }
-                        .aspectRatio(1, contentMode: .fit)
-                        .frame(maxWidth: 420)
+                        Artwork(data: player.current?.artworkData, size: nowPlayingArtworkSize)
+                            .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
                         .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 5) {
@@ -1147,6 +1163,10 @@ struct NowPlayingView: View {
         }
     }
 
+    private var nowPlayingArtworkSize: CGFloat {
+        horizontalSizeClass == .regular ? 420 : 320
+    }
+
     private var controls: some View {
         HStack(spacing: 0) {
             Button { player.toggleShuffle() } label: {
@@ -1194,18 +1214,21 @@ struct QueueTrackRow: View {
     @EnvironmentObject private var player: AudioPlayer
 
     var body: some View {
-        HStack(spacing: 12) {
-            Artwork(data: song.artworkData)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(song.title).font(.body.weight(.medium)).lineLimit(1)
-                Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
+        Button { player.play(song) } label: {
+            HStack(spacing: 12) {
+                Artwork(data: song.artworkData)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(song.title).font(.body.weight(.medium)).lineLimit(1)
+                    Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
-            Spacer(minLength: 4)
-            Image(systemName: "line.3.horizontal")
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button("Entfernen", systemImage: "trash", role: .destructive) { player.removeFromQueue(song) }
         }
