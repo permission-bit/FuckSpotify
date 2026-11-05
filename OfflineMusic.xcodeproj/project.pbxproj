@@ -7,28 +7,67 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1A0000000000000000000038 /* SmartPlaylists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000029 /* SmartPlaylists.swift */; };
-		1A0000000000000000000037 /* PlaybackOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000028 /* PlaybackOptions.swift */; };
-		1A0000000000000000000035 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000026 /* MusicCatalog.swift */; };
-
-		1A0000000000000000000036 /* LibraryManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000027 /* LibraryManagement.swift */; };
 		1A0000000000000000000030 /* OfflineMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* OfflineMusicApp.swift */; };
 		1A0000000000000000000031 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* Views.swift */; };
-		1A0000000000000000000034 /* FolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000025 /* FolderImporter.swift */; };
 		1A0000000000000000000033 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000024 /* Assets.xcassets */; };
+		1A0000000000000000000034 /* FolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000025 /* FolderImporter.swift */; };
+		1A0000000000000000000035 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000026 /* MusicCatalog.swift */; };
+		1A0000000000000000000036 /* LibraryManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000027 /* LibraryManagement.swift */; };
+		1A0000000000000000000037 /* PlaybackOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000028 /* PlaybackOptions.swift */; };
+		1A0000000000000000000038 /* SmartPlaylists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000029 /* SmartPlaylists.swift */; };
+		1A0000000000000000000050 /* MacCompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000060 /* MacCompanionClient.swift */; };
+		1A0000000000000000000051 /* MacConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000061 /* MacConnectionStore.swift */; };
+		1A0000000000000000000052 /* MacDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000062 /* MacDiscovery.swift */; };
+		1A0000000000000000000053 /* MacConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000063 /* MacConnectionView.swift */; };
+		1A0000000000000000000054 /* MacQRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000064 /* MacQRCodeScanner.swift */; };
+		1A0000000000000000000070 /* MacTransferAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000080 /* MacTransferAPI.swift */; };
+		1A0000000000000000000071 /* MacImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000081 /* MacImportModels.swift */; };
+		1A0000000000000000000072 /* MacImportLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000082 /* MacImportLibrary.swift */; };
+		1A0000000000000000000073 /* MacImportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000083 /* MacImportCoordinator.swift */; };
+		1A0000000000000000000074 /* MacImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000084 /* MacImportView.swift */; };
+		1A0000000000000000000090 /* YouTubeAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A0 /* YouTubeAPI.swift */; };
+		1A0000000000000000000091 /* YouTubeSearchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A1 /* YouTubeSearchStore.swift */; };
+		1A0000000000000000000092 /* YouTubePlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A2 /* YouTubePlayerView.swift */; };
+		1A0000000000000000000093 /* ImportHubAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A3 /* ImportHubAPI.swift */; };
+		1A0000000000000000000094 /* ImportHubStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A4 /* ImportHubStore.swift */; };
+		1A0000000000000000000095 /* ImportHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A5 /* ImportHubView.swift */; };
+		1A0000000000000000000096 /* MacSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A6 /* MacSourcesView.swift */; };
+		1A0000000000000000000097 /* MacJobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A7 /* MacJobDetailView.swift */; };
+		1A00000000000000000000B0 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000B1 /* Localization.swift */; };
+		1A00000000000000000000B2 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000B3 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1A0000000000000000000029 /* SmartPlaylists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylists.swift; sourceTree = "<group>"; };
-		1A0000000000000000000028 /* PlaybackOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackOptions.swift; sourceTree = "<group>"; };
-		1A0000000000000000000026 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
-		1A0000000000000000000027 /* LibraryManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryManagement.swift; sourceTree = "<group>"; };
 		1A0000000000000000000007 /* OfflineMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = OfflineMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000020 /* OfflineMusicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMusicApp.swift; sourceTree = "<group>"; };
 		1A0000000000000000000021 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
 		1A0000000000000000000023 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A0000000000000000000024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1A0000000000000000000025 /* FolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderImporter.swift; sourceTree = "<group>"; };
+		1A0000000000000000000026 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
+		1A0000000000000000000027 /* LibraryManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryManagement.swift; sourceTree = "<group>"; };
+		1A0000000000000000000028 /* PlaybackOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackOptions.swift; sourceTree = "<group>"; };
+		1A0000000000000000000029 /* SmartPlaylists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylists.swift; sourceTree = "<group>"; };
+		1A0000000000000000000060 /* MacCompanionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCompanionClient.swift; sourceTree = "<group>"; };
+		1A0000000000000000000061 /* MacConnectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacConnectionStore.swift; sourceTree = "<group>"; };
+		1A0000000000000000000062 /* MacDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacDiscovery.swift; sourceTree = "<group>"; };
+		1A0000000000000000000063 /* MacConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacConnectionView.swift; sourceTree = "<group>"; };
+		1A0000000000000000000064 /* MacQRCodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacQRCodeScanner.swift; sourceTree = "<group>"; };
+		1A0000000000000000000080 /* MacTransferAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTransferAPI.swift; sourceTree = "<group>"; };
+		1A0000000000000000000081 /* MacImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportModels.swift; sourceTree = "<group>"; };
+		1A0000000000000000000082 /* MacImportLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportLibrary.swift; sourceTree = "<group>"; };
+		1A0000000000000000000083 /* MacImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportCoordinator.swift; sourceTree = "<group>"; };
+		1A0000000000000000000084 /* MacImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportView.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A0 /* YouTubeAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAPI.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A1 /* YouTubeSearchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeSearchStore.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A2 /* YouTubePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerView.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A3 /* ImportHubAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportHubAPI.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A4 /* ImportHubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportHubStore.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A5 /* ImportHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportHubView.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A6 /* MacSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSourcesView.swift; sourceTree = "<group>"; };
+		1A00000000000000000000A7 /* MacJobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacJobDetailView.swift; sourceTree = "<group>"; };
+		1A00000000000000000000B1 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		1A00000000000000000000B3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -60,6 +99,26 @@
 				1A0000000000000000000027 /* LibraryManagement.swift */,
 				1A0000000000000000000028 /* PlaybackOptions.swift */,
 				1A0000000000000000000029 /* SmartPlaylists.swift */,
+				1A0000000000000000000060 /* MacCompanionClient.swift */,
+				1A0000000000000000000061 /* MacConnectionStore.swift */,
+				1A0000000000000000000062 /* MacDiscovery.swift */,
+				1A0000000000000000000063 /* MacConnectionView.swift */,
+				1A0000000000000000000064 /* MacQRCodeScanner.swift */,
+				1A0000000000000000000080 /* MacTransferAPI.swift */,
+				1A0000000000000000000081 /* MacImportModels.swift */,
+				1A0000000000000000000082 /* MacImportLibrary.swift */,
+				1A0000000000000000000083 /* MacImportCoordinator.swift */,
+				1A0000000000000000000084 /* MacImportView.swift */,
+				1A00000000000000000000A0 /* YouTubeAPI.swift */,
+				1A00000000000000000000A1 /* YouTubeSearchStore.swift */,
+				1A00000000000000000000A2 /* YouTubePlayerView.swift */,
+				1A00000000000000000000A3 /* ImportHubAPI.swift */,
+				1A00000000000000000000A4 /* ImportHubStore.swift */,
+				1A00000000000000000000A5 /* ImportHubView.swift */,
+				1A00000000000000000000A6 /* MacSourcesView.swift */,
+				1A00000000000000000000A7 /* MacJobDetailView.swift */,
+				1A00000000000000000000B1 /* Localization.swift */,
+				1A00000000000000000000B3 /* Localizable.xcstrings */,
 			);
 			path = OfflineMusic;
 			sourceTree = "<group>";
@@ -102,11 +161,22 @@
 			};
 			buildConfigurationList = 1A0000000000000000000002 /* Build configuration list for PBXProject "OfflineMusic" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				de,
+				en,
+				es,
+				fr,
+				it,
+				"pt-BR",
+				nl,
+				pl,
+				tr,
+				ja,
+				ko,
+				"zh-Hans",
 			);
 			mainGroup = 1A0000000000000000000003;
 			productRefGroup = 1A0000000000000000000004 /* Products */;
@@ -124,6 +194,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A0000000000000000000033 /* Assets.xcassets in Resources */,
+				1A00000000000000000000B2 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +212,25 @@
 				1A0000000000000000000036 /* LibraryManagement.swift in Sources */,
 				1A0000000000000000000037 /* PlaybackOptions.swift in Sources */,
 				1A0000000000000000000038 /* SmartPlaylists.swift in Sources */,
+				1A0000000000000000000050 /* MacCompanionClient.swift in Sources */,
+				1A0000000000000000000051 /* MacConnectionStore.swift in Sources */,
+				1A0000000000000000000052 /* MacDiscovery.swift in Sources */,
+				1A0000000000000000000053 /* MacConnectionView.swift in Sources */,
+				1A0000000000000000000054 /* MacQRCodeScanner.swift in Sources */,
+				1A0000000000000000000070 /* MacTransferAPI.swift in Sources */,
+				1A0000000000000000000071 /* MacImportModels.swift in Sources */,
+				1A0000000000000000000072 /* MacImportLibrary.swift in Sources */,
+				1A0000000000000000000073 /* MacImportCoordinator.swift in Sources */,
+				1A0000000000000000000074 /* MacImportView.swift in Sources */,
+				1A0000000000000000000090 /* YouTubeAPI.swift in Sources */,
+				1A0000000000000000000091 /* YouTubeSearchStore.swift in Sources */,
+				1A0000000000000000000092 /* YouTubePlayerView.swift in Sources */,
+				1A0000000000000000000093 /* ImportHubAPI.swift in Sources */,
+				1A0000000000000000000094 /* ImportHubStore.swift in Sources */,
+				1A0000000000000000000095 /* ImportHubView.swift in Sources */,
+				1A0000000000000000000096 /* MacSourcesView.swift in Sources */,
+				1A0000000000000000000097 /* MacJobDetailView.swift in Sources */,
+				1A00000000000000000000B0 /* Localization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,6 +240,7 @@
 		1A0000000000000000000040 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -168,7 +259,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEVELOPMENT_TEAM = 693A8A378R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -179,7 +269,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -190,6 +279,7 @@
 		1A0000000000000000000041 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -208,7 +298,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEVELOPMENT_TEAM = 693A8A378R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -218,7 +307,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -229,30 +317,32 @@
 		1A0000000000000000000042 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 693A8A378R;
 				INFOPLIST_FILE = OfflineMusic/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = rocks.braxton.offlinemusic;
 				PRODUCT_NAME = OfflineMusic;
-				WRAPPER_NAME = "$(PRODUCT_NAME).app";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				WRAPPER_NAME = "$(PRODUCT_NAME).app";
 			};
 			name = Debug;
 		};
 		1A0000000000000000000043 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 693A8A378R;
 				INFOPLIST_FILE = OfflineMusic/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = rocks.braxton.offlinemusic;
 				PRODUCT_NAME = OfflineMusic;
-				WRAPPER_NAME = "$(PRODUCT_NAME).app";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				WRAPPER_NAME = "$(PRODUCT_NAME).app";
 			};
 			name = Release;
 		};

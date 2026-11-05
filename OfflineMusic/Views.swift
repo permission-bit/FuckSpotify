@@ -8,6 +8,9 @@ import PhotosUI
 private let appTint = Color(red: 0.20, green: 0.60, blue: 0.42)
 
 struct RootView: View {
+    @StateObject private var macConnection = MacConnectionStore()
+    @StateObject private var macImports = MacImportCoordinator()
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var context
     @State private var catalogError: String?
     @Query(sort: \Song.title) private var songs: [Song]
@@ -32,6 +35,15 @@ struct RootView: View {
             }
         }
         .tint(appTint)
+        .environmentObject(macConnection)
+        .environmentObject(macImports)
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active { macConnection.setActive(true); macImports.setActive(true) }
+            else if phase == .background { macImports.setActive(false); macConnection.setActive(false) }
+        }
+        .onChange(of: macConnection.status, initial: true) { _, status in
+            macImports.setConnection(status == .connected ? macConnection.transferCredentials() : nil)
+        }
         .animation(.easeInOut(duration: 0.2), value: player.current?.id)
         .onAppear { player.attachHistoryContext(context); player.setLibrary(songs) }.onChange(of: songs.map(\.id)) { _, _ in player.setLibrary(songs) }
         .task {
@@ -39,6 +51,7 @@ struct RootView: View {
                 try DuplicateLibraryStore.recover(in: context)
                 try await Importer.recoverInterruptedImports(context: context)
                 try MusicCatalog.seed(in: context)
+                macImports.attach(context.container)
             }
             catch { catalogError = error.localizedDescription }
         }
@@ -49,6 +62,9 @@ struct RootView: View {
 }
 
 struct HomeView: View {
+    @EnvironmentObject private var macConnection: MacConnectionStore
+    @State private var showingMacConnection = false
+    @State private var showingAppSettings = false
     @Query(sort: \Song.addedAt, order: .reverse) private var songs: [Song]
     @Environment(\.modelContext) private var context
     @State private var showImporter = false; @State private var importingFolder = false
@@ -61,6 +77,16 @@ struct HomeView: View {
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 12, trailing: 0))
+                Section {
+                    NavigationLink { ImportHubView() } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("YouTube & Import").font(.headline)
+                                Text("Entdecken, Vorschau und eigene Musik importieren").font(.caption).foregroundStyle(.secondary)
+                            }.padding(.vertical, 6)
+                        } icon: { Image(systemName: "play.rectangle.on.rectangle").font(.title2).foregroundStyle(.tint) }
+                    }
+                }
                 if songs.isEmpty {
                     EmptyLibraryCard { importingFolder = true; showImporter = true }
                 } else {
@@ -76,7 +102,20 @@ struct HomeView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Start")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Menu { Button("Ordner importieren", systemImage: "folder") { importingFolder = true; showImporter = true }; Button("Dateien importieren", systemImage: "music.note") { importingFolder = false; showImporter = true } } label: { Image(systemName: "plus.circle.fill").font(.title3) } } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Mac-Verbindung", systemImage: "desktopcomputer") { showingMacConnection = true }
+                        .accessibilityValue(macConnection.status.title)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Einstellungen", systemImage: "gearshape") { showingAppSettings = true }
+                }
+                ToolbarItem(placement: .topBarTrailing) { Menu { Button("Ordner importieren", systemImage: "folder") { importingFolder = true; showImporter = true }; Button("Dateien importieren", systemImage: "music.note") { importingFolder = false; showImporter = true } } label: { Image(systemName: "plus.circle.fill").font(.title3) } }
+            }
+            .sheet(isPresented: $showingMacConnection) { MacConnectionView() }
+            .sheet(isPresented: $showingAppSettings) {
+                NavigationStack { AppSettingsView() }
+            }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.folder, .audio], allowsMultipleSelection: true) { result in
                 Task {
                     if importingFolder { await Importer.importFolders(result, context: context) }
@@ -1090,7 +1129,7 @@ enum Importer {
         for source in urls {
             let accessed = source.startAccessingSecurityScopedResource()
             defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-            try? await stageAndImport(source, context: context)
+            _ = try? await stageAndImport(source, context: context)
         }
     }
 }

@@ -1,0 +1,54 @@
+name: Download Mac Companion
+on:
+  workflow_dispatch:
+  push:
+    tags: ['companion-v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tools for the packaged app
+        run: brew install ffmpeg openssl@3
+      - name: Build dependencies
+        run: python -m pip install -r requirements-mac-build.txt
+      - name: Build app
+        run: python MacCompanion/build.py
+      - name: Validate bundled tools
+        run: python Tests/check_mac_bundle.py 'dist/OfflineMusic Companion.app'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OfflineMusic-Companion-${{ matrix.arch }}
+          path: dist/OfflineMusic-Companion-${{ matrix.arch }}.zip
+          if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/companion-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: OfflineMusic-Companion-*
+          merge-multiple: true
+          path: packages
+      - name: Create draft release with both downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" packages/*.zip --draft --title "OfflineMusic Companion $TAG" --notes 'Download the ZIP for your Mac, unpack it and move the app to Applications. Setup: MAC_APP.md. Ad-hoc signed test build; not Apple-notarized.'

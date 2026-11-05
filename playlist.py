@@ -1,122 +1,66 @@
 
 #!/usr/bin/env python3
 
-import re
-import shutil
-import subprocess
+import argparse
+import json
 from pathlib import Path
-from urllib.parse import urlparse
+
+from converter_core import Converter, MediaSource, clean_name, valid_url, missing_dependencies, metadata_options
+from conversion_worker import ConversionError, ConversionWorker
 
 BASE_DIR = Path.home() / "Music" / "YouTube"
 SINGLES_DIR = BASE_DIR / "Singles"
 PLAYLISTS_DIR = BASE_DIR / "Playlists"
 BATCH_DIR = BASE_DIR / "Batch"
 
-#AUDIO_QUALITY = "192K"
-AUDIO_QUALITY = "320K" #320K is better
+AUDIO_QUALITY = "320K"  # Encoding bitrate cannot improve a lossy source.
 
 FRAGMENTS = 4
 
 
-def clean_name(value):
-    value = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", value)
-    return value.strip(" .")
-
-
-def valid_url(value):
-    try:
-        parsed = urlparse(value)
-        host = (parsed.hostname or "").lower()
-        return (
-            parsed.scheme in ("http", "https")
-            and (
-                host in ("youtube.com", "youtu.be")
-                or host.endswith(".youtube.com")
-            )
-        )
-    except ValueError:
-        return False
-
-
 def dependencies_ready():
-    for program in ("yt-dlp", "ffmpeg", "ffprobe"):
-        if not shutil.which(program):
-            print(f"Missing dependency: {program}")
-            print("Install with: brew install yt-dlp ffmpeg")
-            return False
-    return True
-
-
-def metadata_options(artist="", album="", playlist=False):
-    options = []
-
-    if artist:
-        options += [
-            "--parse-metadata",
-            f"{artist}:%(meta_artist)s",
-            "--parse-metadata",
-            f"{artist}:%(meta_album_artist)s",
-        ]
-
-    if album:
-        options += [
-            "--parse-metadata",
-            f"{album}:%(meta_album)s",
-        ]
-    elif playlist:
-        options += [
-            "--parse-metadata",
-            "%(playlist_title|)s:%(meta_album)s",
-        ]
-
-    if playlist:
-        options += [
-            "--parse-metadata",
-            "%(playlist_index|)s:%(meta_track)s",
-        ]
-
-    return options
+    missing = missing_dependencies()
+    for program in missing:
+        print(f"Missing dependency: {program}")
+    if missing:
+        print("Install with: brew install yt-dlp ffmpeg")
+    return not missing
 
 
 def download(url, output, archive, playlist=False,
-             artist="", album=""):
+             artist="", album="", *, authorized=False, quality=AUDIO_QUALITY):
+    """Compatibility CLI helper. Old archive files remain untouched.
+
+    SQLite results replace archive-only skipping, which cannot prove that a
+    usable, validated file still exists. Callers must explicitly authorize media.
+    """
 
     if not valid_url(url):
         print(f"Skipping invalid YouTube URL: {url}")
         return False
 
-    command = [
-        "yt-dlp",
-        "--yes-playlist" if playlist else "--no-playlist",
-        "--ignore-errors",
-        "--no-overwrites",
-        "--continue",
-        "--retries", "5",
-        "--fragment-retries", "5",
-        "--concurrent-fragments", str(FRAGMENTS),
-        "--download-archive", str(archive),
-        "-f", "bestaudio/best",
-        "--extract-audio",
-        "--audio-format", "mp3",
-        "--audio-quality", AUDIO_QUALITY,
-        "--embed-metadata",
-        "--embed-thumbnail",
-        "--convert-thumbnails", "jpg",
-        "--no-embed-chapters",
-        "--no-embed-info-json",
-    ]
-
-    command += metadata_options(artist, album, playlist)
-    command += ["-o", str(output), url]
-
-    print(f"\nProcessing: {url}\n")
-
     try:
-        result = subprocess.run(command, check=False)
-        return result.returncode == 0
-    except KeyboardInterrupt:
-        print("\nInterrupted by user.")
-        raise
+        converter = Converter(BASE_DIR, worker=ConversionWorker(fragments=FRAGMENTS))
+        job = converter.submit(MediaSource(url, "playlist" if playlist else "video", authorized=authorized),
+                               quality=quality, artist=artist, album=album, output_template=output)
+        print(f"\nJob: {job['id']}\nProcessing: {url}\n")
+        result = converter.run(job["id"], _print_progress)
+        print(f"Result: {result['status']} · {result['counts']}")
+        return result["status"] == "completed"
+    except (ValueError, OSError, ConversionError) as error:
+        print(f"Cannot process source: {error}")
+        return False
+
+
+def _print_progress(event):
+    if event.get("status") == "failed":
+        print(f"Failed: {event['error']['message']}")
+    elif event.get("phase"):
+        fraction = event.get("fraction")
+        suffix = f" {fraction:.0%}" if fraction is not None else ""
+        print(f"{event['item_id']}: {event['phase']}{suffix}")
+    elif event.get("result"):
+        print(f"{event.get('status')}: {event['result']['path']}")
 
 
 def read_links(filename):
@@ -146,7 +90,26 @@ def read_links(filename):
     return links
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Authorized-media MP3 converter; no network server")
+    parser.add_argument("--status", metavar="JOB_ID", help="Print a persisted job as JSON")
+    parser.add_argument("--cancel", metavar="JOB_ID", help="Request cancellation, including from another terminal")
+    parser.add_argument("--retry", metavar="JOB_ID", help="Retry failed/cancelled/interrupted items")
+    parser.add_argument("--json", action="store_true", help="Use JSON output for retry progress/results")
+    args = parser.parse_args(argv)
+    job_id = args.status or args.cancel or args.retry
+    if job_id:
+        converter = Converter(BASE_DIR)
+        if args.cancel:
+            result = converter.cancel(job_id)
+        elif args.retry:
+            converter.retry(job_id)
+            callback = (lambda event: print(json.dumps(event, ensure_ascii=False))) if args.json else _print_progress
+            result = converter.run(job_id, callback)
+        else:
+            result = converter.get_job(job_id)
+        print(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
+        return
     print("\n=== YouTube MP3 Batch Converter ===\n")
 
     if not dependencies_ready():
@@ -169,6 +132,12 @@ def main():
     if not any((single_url, playlist_url, batch_file)):
         print("No input provided. Exiting.")
         return
+
+    authorized = input("Do you have permission for every selected download, including platform permissions? [y/N]: ").strip().lower() in {"y", "yes", "j", "ja"}
+    if not authorized:
+        print("No authorization confirmed. Nothing will be downloaded.")
+        return
+    quality = input(f"MP3 quality (64–320K or VBR 0–10; Enter for {AUDIO_QUALITY}): ").strip() or AUDIO_QUALITY
 
     artist = input(
         "Artist override (Enter for automatic): "
@@ -196,7 +165,9 @@ def main():
             SINGLES_DIR / filename,
             BASE_DIR / "singles_archive.txt",
             artist=artist,
-            album=album
+            album=album,
+            authorized=True,
+            quality=quality
         )
 
     if playlist_url:
@@ -210,7 +181,9 @@ def main():
             BASE_DIR / "playlists_archive.txt",
             playlist=True,
             artist=artist,
-            album=album
+            album=album,
+            authorized=True,
+            quality=quality
         )
 
     if batch_file:
@@ -227,10 +200,12 @@ def main():
                 BATCH_DIR / "%(title).180B [%(id)s].%(ext)s",
                 BASE_DIR / "batch_archive.txt",
                 artist=artist,
-                album=album
+                album=album,
+                authorized=True,
+                quality=quality
             )
 
-    print("\nAll requested downloads processed.")
+    print("\nRequested jobs processed; check the result/error summary above.")
     print(f"Output directory: {BASE_DIR}")
 
 
@@ -239,3 +214,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\nStopped.")
+    except (KeyError, ValueError, OSError, ConversionError) as error:
+        print(f"\nError: {error}")

@@ -81,6 +81,10 @@ dist/
 # =========================
 .vscode/
 .idea/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
 *.swp
 *.swo
 *~
@@ -148,3 +152,12 @@ plugin/
 loader/unpacked/
 raas_tor/raas/
 onion.txt
+
+# Local companion data, certificates, keys, tokens and conversion state.
+.venv-companion/
+.companion/
+.converter/
+.companion-test/
+
+# Personal example playlists and local media lists.
+playlist_links.txt

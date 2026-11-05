@@ -232,7 +232,7 @@ enum DuplicateScanner {
         return exactGroups.sorted { $0.id < $1.id } + possibleGroups.sorted { $0.id < $1.id }
     }
 
-    private static func metadataKey(for record: DuplicateSongRecord) -> String? {
+    static func metadataKey(for record: DuplicateSongRecord) -> String? {
         let title = normalized(record.title)
         let artist = knownValue(record.artist)
         let album = knownValue(record.album)
@@ -252,7 +252,7 @@ enum DuplicateScanner {
         return ["unknown", "unknown artist", "unknown album", "unbekannt", "unbekannter kunstler", "unbekanntes album"].contains(key) ? "" : key
     }
 
-    private static func fileSize(at path: String) -> Int64? {
+    static func fileSize(at path: String) -> Int64? {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: path),
               attributes[.type] as? FileAttributeType == .typeRegular,
               FileManager.default.isReadableFile(atPath: path),
@@ -260,7 +260,7 @@ enum DuplicateScanner {
         return size.int64Value
     }
 
-    private static func streamingHash(at path: String) -> String? {
+    static func streamingHash(at path: String) -> String? {
         guard let before = try? FileManager.default.attributesOfItem(atPath: path) else { return nil }
         guard let handle = try? FileHandle(forReadingFrom: URL(fileURLWithPath: path)) else { return nil }
         defer { try? handle.close() }

@@ -7,9 +7,15 @@ import UIKit
 @main
 struct OfflineMusicApp: App {
     @StateObject private var player = AudioPlayer.shared
+    @AppStorage("app.language") private var languageCode = AppLanguage.system.rawValue
+
     var body: some Scene {
-        WindowGroup { RootView().environmentObject(player) }
-            .modelContainer(for: [Song.self, Playlist.self, MusicGenre.self, ArtistProfile.self])
+        WindowGroup {
+            RootView()
+                .environmentObject(player)
+                .environment(\.locale, AppLanguage(rawValue: languageCode)?.locale ?? .current)
+        }
+            .modelContainer(for: [Song.self, Playlist.self, MusicGenre.self, ArtistProfile.self, MacImportBatch.self, MacImportedFile.self])
     }
 }
 
@@ -32,6 +38,7 @@ struct OfflineMusicApp: App {
     var originalGenreIDs: [UUID] = []
     var inferredGenreIDs: [UUID] = []
     var genreOverrideID: UUID?
+    var trackNumber: Int?
     init(title: String, artist: String = "Unknown Artist", album: String = "Unknown Album", duration: Double = 0, fileName: String, artworkData: Data? = nil, importedGenre: String = "") {
         self.title = title; self.artist = artist; self.album = album; self.duration = duration; self.fileName = fileName; self.artworkData = artworkData; self.importedGenre = importedGenre
     }
