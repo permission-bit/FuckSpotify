@@ -20,21 +20,27 @@ struct PlaybackSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 Section {
                     Toggle("Crossfade", isOn: Binding(get: { player.crossfadeEnabled }, set: player.setCrossfadeEnabled))
-                    LabeledContent("Dauer", value: "\(Int(player.crossfadeDuration)) Sekunden")
+                    LabeledContent("Dauer") { Text("\(Int(player.crossfadeDuration)) Sekunden").monospacedDigit() }
                     Slider(value: Binding(get: { player.crossfadeDuration }, set: player.setCrossfadeDuration), in: 0...12, step: 1)
                         .disabled(!player.crossfadeEnabled)
+                        .frame(minHeight: 44)
+                        .accessibilityLabel(Text("Crossfade-Dauer"))
+                        .accessibilityValue(Text("\(Int(player.crossfadeDuration)) Sekunden"))
                 } footer: { Text("Blendet aufeinanderfolgende Titel ineinander. Bei kurzen Titeln wird die Überblendung automatisch verkürzt.") }
                 Section {
                     Toggle("Lückenarme Wiedergabe", isOn: Binding(get: { player.gaplessEnabled }, set: player.setGaplessEnabled))
                         .disabled(player.crossfadeEnabled && player.crossfadeDuration > 0)
                 } footer: { Text("Bereitet den nächsten Titel vor und startet kompatible Dateien direkt im Anschluss. Verfügbare Encoderinformationen werden vom Audiodecoder berücksichtigt. Bei aktivem Crossfade werden Titel stattdessen überblendet.") }
+                }.listRowBackground(AppTheme.surface)
             }
+            .musicScreen()
             .navigationTitle("Wiedergabeeinstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
-        }
+        }.musicScreen()
     }
 }
 
@@ -45,12 +51,17 @@ struct SleepTimerView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 if player.sleepDeadline != nil || player.sleepAfterCurrentSong {
                     Section("Aktiver Timer") {
                         if let deadline = player.sleepDeadline {
                             TimelineView(.periodic(from: .now, by: 1)) { timeline in
                                 let remaining = max(0, Int(ceil(deadline.timeIntervalSince(timeline.date))))
-                                LabeledContent("Verbleibend", value: String(format: "%02d:%02d", remaining / 60, remaining % 60))
+                                LabeledContent("Verbleibend") {
+                                    Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
+                                        .monospacedDigit()
+                                        .accessibilityLabel(Text("\(remaining / 60) Minuten, \(remaining % 60) Sekunden"))
+                                }
                             }
                         } else { Text("Stoppt nach dem aktuellen Titel") }
                         Button("Timer abbrechen", role: .destructive) { player.cancelSleepTimer() }
@@ -66,10 +77,12 @@ struct SleepTimerView: View {
                 Section {
                     Toggle("Sanft ausblenden", isOn: Binding(get: { player.sleepFadeEnabled }, set: player.setSleepFadeEnabled))
                 } footer: { Text("Die Lautstärke wird in den letzten 5 Sekunden reduziert. Der Timer zählt auch während einer Pause weiter.") }
+                }.listRowBackground(AppTheme.surface)
             }
+            .musicScreen()
             .navigationTitle("Sleep Timer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
-        }
+        }.musicScreen()
     }
 }

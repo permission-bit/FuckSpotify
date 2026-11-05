@@ -19,13 +19,15 @@ struct MacConnectionView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 Section {
-                    Label(discovery.isSearching && !connection.isConfigured ? "Mac suchen" : connection.status.title,
-                          systemImage: connection.status == .connected ? "checkmark.circle.fill" : "desktopcomputer")
-                        .foregroundStyle(connection.status == .connected ? Color.accentColor : .primary)
-                    if connection.isBusy || connection.status == .checking || discovery.isSearching { ProgressView() }
-                    if let message = connection.message { Text(message).font(.footnote).foregroundStyle(.secondary) }
-                    if let error = inputError { Text(error).font(.footnote).foregroundStyle(.red) }
+                    Label {
+                        Text(LocalizedStringKey(discovery.isSearching && !connection.isConfigured ? "Mac suchen" : connection.status.title))
+                    } icon: { Image(systemName: connection.status == .connected ? "checkmark.circle.fill" : "desktopcomputer") }
+                        .foregroundStyle(connection.status == .connected ? AppTheme.accent : AppTheme.text)
+                    if connection.isBusy || connection.status == .checking || discovery.isSearching { ProgressView().accessibilityLabel(Text("Mac-Verbindung")) }
+                    if let message = connection.message { Text(L10n.text(message)).font(.footnote).foregroundStyle(AppTheme.secondaryText) }
+                    if let error = inputError { Text(L10n.text(error)).font(.footnote).foregroundStyle(.red) }
                 } header: { Text("Mac-Verbindung") }
                 if connection.isConfigured {
                     MacImportView()
@@ -46,17 +48,20 @@ struct MacConnectionView: View {
                         Button("QR-Code am Mac scannen", systemImage: "qrcode.viewfinder") {
                             discovery.stop(); inputError = nil; scannedPairing = nil; showingQRScanner = true
                         }.disabled(connection.isBusy)
-                        Button(discovery.isSearching ? "Suche beenden" : "Mac im Heimnetz suchen", systemImage: "network") {
+                        Button {
                             if discovery.isSearching { discovery.stop() } else { discovery.start() }
+                        } label: {
+                            Label { Text(LocalizedStringKey(discovery.isSearching ? "Suche beenden" : "Mac im Heimnetz suchen")) } icon: { Image(systemName: "network") }
                         }.disabled(connection.isBusy)
                         ForEach(discovery.servers) { mac in
                             Button {
                                 address = mac.address; identityConfirmed = false; discovery.stop()
                             } label: {
-                                VStack(alignment: .leading, spacing: 4) { Text(mac.name); Text(mac.address).font(.caption).foregroundStyle(.secondary) }
+                                VStack(alignment: .leading, spacing: 8) { Text(mac.name); Text(mac.address).font(.caption).foregroundStyle(AppTheme.secondaryText) }
+                                    .frame(minHeight: 44, alignment: .leading)
                             }
                         }
-                        if let message = discovery.message { Text(message).font(.footnote).foregroundStyle(.secondary) }
+                        if let message = discovery.message { Text(L10n.text(message)).font(.footnote).foregroundStyle(AppTheme.secondaryText) }
                     } header: { Text("Mac finden") } footer: { Text("Starte den Companion im Terminal mit „serve --bonjour“. Scanne den dort angezeigten QR-Code, um dich direkt zu verbinden. Beide Geräte müssen im selben erreichbaren Heimnetz sein.") }
                     Section {
                         TextEditor(text: $payload).frame(minHeight: 90).font(.caption.monospaced())
@@ -87,19 +92,22 @@ struct MacConnectionView: View {
                     Button("iPhone-App-Einstellungen öffnen", systemImage: "gearshape") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                     }
-                    Text("Falls die Verbindung blockiert ist: Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk → Offline Music einschalten. In den App-Einstellungen auch die Kamera für den QR-Code erlauben.").font(.footnote).foregroundStyle(.secondary)
-                    Text("Mac: Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk. Beide Geräte müssen im gleichen erreichbaren WLAN sein.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Falls die Verbindung blockiert ist: Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk → Offline Music einschalten. In den App-Einstellungen auch die Kamera für den QR-Code erlauben.").font(.footnote).foregroundStyle(AppTheme.secondaryText)
+                    Text("Mac: Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk. Beide Geräte müssen im gleichen erreichbaren WLAN sein.").font(.footnote).foregroundStyle(AppTheme.secondaryText)
                 }
+                }.listRowBackground(AppTheme.surface)
             }
+            .musicScreen()
             .navigationTitle("Mac-Verbindung")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
             .sheet(isPresented: $showingQRScanner, onDismiss: { showingQRConfirmation = scannedPairing != nil }) {
                 MacQRCodeScanner { text in
                     do { scannedPairing = try MacPairingPayload.parse(text); inputError = nil }
-                    catch { scannedPairing = nil; inputError = error.localizedDescription }
+                    catch { scannedPairing = nil; inputError = L10n.error(error) }
                     showingQRScanner = false
                 }
+                .musicScreen()
             }
             .alert("Mit diesem Mac verbinden?", isPresented: $showingQRConfirmation) {
                 Button("Verbinden") {
@@ -129,13 +137,13 @@ struct MacConnectionView: View {
                 }
             }
             .onDisappear { discovery.stop(); secret = ""; payload = "" }
-        }
+        }.musicScreen()
     }
     private func readPayload() {
         do {
             let value = try MacPairingPayload.parse(payload)
             address = value.url; fingerprint = value.server_certificate_sha256; secret = value.secret
             payload = ""; identityConfirmed = false; inputError = nil
-        } catch { inputError = error.localizedDescription }
+        } catch { inputError = L10n.error(error) }
     }
 }

@@ -14,6 +14,7 @@ struct MacSourcesView: View {
     var body: some View {
         NavigationStack {
             List {
+                Group {
                 Section {
                     Picker("MP3-Qualität", selection: $quality) {
                         ForEach(["128K", "192K", "256K", "320K"], id: \.self) { Text($0.replacingOccurrences(of: "K", with: " kbit/s")).tag($0) }
@@ -36,17 +37,20 @@ struct MacSourcesView: View {
                     ForEach(hub.sources) { source in
                         Button { hub.toggle(source) } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: hub.selectedIDs.contains(source.id) ? "checkmark.circle.fill" : "circle").font(.title3)
-                                Image(systemName: "music.note").foregroundStyle(.secondary).frame(width: 28)
+                                Image(systemName: hub.selectedIDs.contains(source.id) ? "checkmark.circle.fill" : "circle").font(.title3).accessibilityHidden(true)
+                                Image(systemName: "music.note").foregroundStyle(AppTheme.secondaryText).frame(width: 28).accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(source.title).foregroundStyle(.primary).lineLimit(2)
-                                    Text(source.importable ? "\(source.format) · \(ByteCountFormatter.string(fromByteCount: source.size ?? 0, countStyle: .file))" : "Auf dem Mac nicht verfügbar")
-                                        .font(.caption).foregroundStyle(.secondary)
+                                    Text(source.title).foregroundStyle(AppTheme.text).lineLimit(2)
+                                    Group {
+                                        if source.importable { Text("\(source.format) · \(ByteCountFormatter.string(fromByteCount: source.size ?? 0, countStyle: .file))") }
+                                        else { Text("Auf dem Mac nicht verfügbar") }
+                                    }.font(.caption).foregroundStyle(AppTheme.secondaryText)
                                 }
                                 Spacer(minLength: 0)
-                            }.padding(.vertical, 4)
+                            }.frame(minHeight: 44).padding(.vertical, 8).contentShape(Rectangle())
                         }.disabled(!source.importable || hub.isSubmitting)
-                            .accessibilityValue(hub.selectedIDs.contains(source.id) ? "Ausgewählt" : "Nicht ausgewählt")
+                            .accessibilityValue(Text(LocalizedStringKey(hub.selectedIDs.contains(source.id) ? "Ausgewählt" : "Nicht ausgewählt")))
+                            .accessibilityAddTraits(hub.selectedIDs.contains(source.id) ? .isSelected : [])
                     }
                     if hub.isLoading { ProgressView("Dateien laden …") }
                     if hub.moreSources { Button("Weitere Dateien laden") { Task { await hub.loadSources(reset: false) } }.disabled(hub.isLoading) }
@@ -55,9 +59,14 @@ struct MacSourcesView: View {
                             description: Text("Stelle eigene oder entsprechend autorisierte Audiodateien auf dem Mac mit „add-file --device …“ für dieses iPhone bereit."))
                     }
                 } header: { Text("Für dieses iPhone bereitgestellt") }
-                if let message = hub.message { Section { Text(message).font(.footnote).foregroundStyle(.secondary) } }
-                if connection.status != .connected { Section { Label(connection.status.title, systemImage: "wifi.exclamationmark") } }
+                if let message = hub.message { Section { Text(L10n.text(message)).font(.footnote).foregroundStyle(AppTheme.secondaryText) } }
+                if connection.status != .connected {
+                    Section { Label { Text(LocalizedStringKey(connection.status.title)) } icon: { Image(systemName: "wifi.exclamationmark") } }
+                }
+                }.listRowBackground(AppTheme.surface)
             }
+            .listStyle(.insetGrouped)
+            .musicScreen()
             .animation(.easeInOut(duration: 0.18), value: hub.selectedIDs)
             .navigationTitle("Musik importieren").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -69,6 +78,9 @@ struct MacSourcesView: View {
                             if hub.submittedJob != nil { onSubmitted() }
                         }
                     } label: { if hub.isSubmitting { ProgressView() } else { Text("Import starten") } }
+                    .frame(minWidth: 44, minHeight: 44)
+                    .accessibilityLabel(Text("Import starten"))
+                    .accessibilityValue(Text(LocalizedStringKey(hub.isSubmitting ? "Import wird gestartet …" : "Bereit")))
                     .disabled(hub.selection.isEmpty || hub.isSubmitting || connection.status != .connected || scenePhase != .active)
                 }
             }
@@ -77,6 +89,6 @@ struct MacSourcesView: View {
                 if case .playlist(let id) = target, !playlists.contains(where: { $0.id == id }) { target = .library }
                 hub.connect(connection.transferCredentials()); await hub.loadSources()
             }
-        }
+        }.musicScreen()
     }
 }

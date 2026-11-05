@@ -135,14 +135,15 @@ struct GenreLibraryView: View {
 
     var body: some View {
         List {
+            Group {
             Section {
                 ForEach(genres.filter { query.isEmpty || $0.name.localizedStandardContains(query) }) { genre in
                     NavigationLink { GenreDetailView(genre: genre) } label: {
                         HStack {
-                            Label(genre.name, systemImage: "music.note.list")
+                            Label(genre.name, systemImage: "music.note.list").fixedSize(horizontal: false, vertical: true)
                             Spacer()
                             Text("\(songs.filter { $0.genreIDs.contains(genre.id) }.count) Titel")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(AppTheme.secondaryText)
                         }
                     }
                 }
@@ -162,12 +163,18 @@ struct GenreLibraryView: View {
                     NavigationLink(artist.name) { CatalogArtistView(artist: artist) }
                 }
                 NavigationLink("Noch nicht zugeordnete Titel") {
-                    List(songs.filter { $0.genreIDs.isEmpty }) { SongRow(song: $0) }
+                    List(songs.filter { $0.genreIDs.isEmpty }) {
+                        SongRow(song: $0).listRowBackground(AppTheme.surface)
+                    }
+                        .musicScreen()
                         .navigationTitle("Ohne Zuordnung")
                 }
             }
             }
+            }.listRowBackground(AppTheme.surface)
         }
+        .listStyle(.insetGrouped)
+        .musicScreen()
         .navigationTitle("Genres & Künstler")
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Genres oder Künstler suchen")
     }
@@ -182,6 +189,7 @@ struct GenreDetailView: View {
 
     var body: some View {
         List {
+            Group {
             Section("Künstler") {
                 ForEach(artists.filter { $0.genreID == genre.id && (query.isEmpty || $0.name.localizedStandardContains(query)) }) { artist in
                     NavigationLink { CatalogArtistView(artist: artist) } label: {
@@ -189,7 +197,7 @@ struct GenreDetailView: View {
                             Text(artist.name)
                             Spacer()
                             Text("\(songs.filter { $0.artistIDs.contains(artist.id) }.count)")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.secondaryText)
                         }
                     }
                 }
@@ -197,11 +205,14 @@ struct GenreDetailView: View {
             Section("Heruntergeladene Titel") {
                 ForEach(songs.filter { $0.genreIDs.contains(genre.id) && (query.isEmpty || "\($0.title) \($0.artist)".localizedStandardContains(query)) }) { SongRow(song: $0) }
             }
+            }.listRowBackground(AppTheme.surface)
         }
+        .listStyle(.insetGrouped)
+        .musicScreen()
         .navigationTitle(genre.name)
         .searchable(text: $query, prompt: "Künstler oder Titel suchen")
         .toolbar { Button("Künstler hinzufügen", systemImage: "person.badge.plus") { showingCreate = true } }
-        .sheet(isPresented: $showingCreate) { ArtistEditorView(initialGenreID: genre.id) }
+        .sheet(isPresented: $showingCreate) { ArtistEditorView(initialGenreID: genre.id).musicScreen() }
     }
 }
 
@@ -216,12 +227,14 @@ struct CatalogArtistView: View {
             if tracks.isEmpty {
                 ContentUnavailableView("Noch keine Titel", systemImage: "music.note", description: Text("Passende importierte Songs erscheinen hier automatisch."))
             } else {
-                ForEach(tracks) { SongRow(song: $0) }
+                ForEach(tracks) { SongRow(song: $0) }.listRowBackground(AppTheme.surface)
             }
         }
+        .listStyle(.insetGrouped)
+        .musicScreen()
         .navigationTitle(artist.name)
         .toolbar { Button("Bearbeiten") { editing = true } }
-        .sheet(isPresented: $editing) { ArtistEditorView(artist: artist) }
+        .sheet(isPresented: $editing) { ArtistEditorView(artist: artist).musicScreen() }
     }
 }
 
@@ -244,6 +257,7 @@ struct ArtistEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 Section("Künstler") {
                     NavigationLink {
                         ArtistNamePickerView { profile in
@@ -260,13 +274,13 @@ struct ArtistEditorView: View {
                 }
                 Section {
                     ForEach(MusicCatalog.MatchField.allCases) { field in
-                        Toggle(field.label, isOn: Binding(
+                        Toggle(isOn: Binding(
                             get: { matchFields.contains(field.rawValue) },
                             set: { enabled in
                                 if enabled { matchFields.insert(field.rawValue) }
                                 else { matchFields.remove(field.rawValue) }
                             }
-                        ))
+                        )) { Text(LocalizedStringKey(field.label)) }
                     }
                 } header: { Text("Namen und Schreibweisen suchen in") }
                 footer: { Text("Ein Treffer in einem ausgewählten Feld genügt. Groß- und Kleinschreibung, Akzente und Satzzeichen werden beim Vergleich vereinheitlicht.") }
@@ -277,8 +291,11 @@ struct ArtistEditorView: View {
                         HStack {
                             Text("Genre")
                             Spacer()
-                            Text(genres.first { $0.id == genreID }?.name ?? "Bitte auswählen")
-                                .foregroundStyle(.secondary)
+                            Group {
+                                if let genre = genres.first(where: { $0.id == genreID }) { Text(genre.name) }
+                                else { Text("Bitte auswählen") }
+                            }.foregroundStyle(AppTheme.secondaryText)
+                                .multilineTextAlignment(.trailing)
                         }
                     }
                     .disabled(!newGenre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -288,8 +305,10 @@ struct ArtistEditorView: View {
                 } footer: {
                     Text("Die Zuordnung gilt für vorhandene und künftig importierte Titel dieses Künstlers. Bei bekannten Namen wird das hinterlegte Genre vorgeschlagen.")
                 }
+                }.listRowBackground(AppTheme.surface)
             }
-            .navigationTitle(artist == nil ? "Create Artist +" : "Künstler bearbeiten")
+            .musicScreen()
+            .navigationTitle(Text(LocalizedStringKey(artist == nil ? "Create Artist +" : "Künstler bearbeiten")))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
@@ -315,8 +334,8 @@ struct ArtistEditorView: View {
             }
             .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") { errorMessage = nil }
-            } message: { Text(errorMessage ?? "") }
-        }
+            } message: { Text(L10n.text(errorMessage ?? "")) }
+        }.musicScreen()
     }
 
     private func save() {
@@ -354,7 +373,7 @@ struct ArtistEditorView: View {
             }
             try MusicCatalog.reclassify(in: context)
             dismiss()
-        } catch { errorMessage = error.localizedDescription }
+        } catch { errorMessage = L10n.error(error) }
     }
 }
 
@@ -373,17 +392,22 @@ struct GenrePickerView: View {
                     dismiss()
                 } label: {
                     HStack {
-                        Text(genre.name).foregroundStyle(.primary)
+                        Text(genre.name).foregroundStyle(AppTheme.text).fixedSize(horizontal: false, vertical: true)
                         Spacer()
-                        if genre.id == selection { Image(systemName: "checkmark") }
-                    }
+                        if genre.id == selection { Image(systemName: "checkmark").accessibilityHidden(true) }
+                    }.frame(minHeight: 44).contentShape(Rectangle())
                 }
+                .accessibilityAddTraits(genre.id == selection ? .isSelected : [])
+                .listRowBackground(AppTheme.surface)
             }
             if results.isEmpty {
                 Text("Kein Genre gefunden. Du kannst im Formular ein neues erstellen.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .listRowBackground(AppTheme.surface)
             }
         }
+        .listStyle(.insetGrouped)
+        .musicScreen()
         .navigationTitle("Genre auswählen")
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Genre suchen")
     }
@@ -399,14 +423,23 @@ struct ArtistNamePickerView: View {
         List {
             let results = artists.filter { query.isEmpty || $0.name.localizedStandardContains(query) || $0.aliases.contains(where: { $0.localizedStandardContains(query) }) }
             ForEach(results) { profile in
-                Button(profile.name) {
+                Button {
                     onSelect(profile)
                     dismiss()
+                } label: {
+                    Text(profile.name).frame(minHeight: 44, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundStyle(.primary)
+                .foregroundStyle(AppTheme.text)
+                .listRowBackground(AppTheme.surface)
             }
-            if results.isEmpty { Text("Kein Künstler gefunden. Eigene Namen kannst du im Formular eingeben.").foregroundStyle(.secondary) }
+            if results.isEmpty {
+                Text("Kein Künstler gefunden. Eigene Namen kannst du im Formular eingeben.")
+                    .foregroundStyle(AppTheme.secondaryText).listRowBackground(AppTheme.surface)
+            }
         }
+        .listStyle(.insetGrouped)
+        .musicScreen()
         .navigationTitle("Künstler auswählen")
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Künstler suchen")
     }

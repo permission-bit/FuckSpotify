@@ -16,7 +16,7 @@ struct MacQRCodeScanner: View {
                 Text("Scanne den QR-Code im Terminal deines Macs.")
                     .font(.headline).multilineTextAlignment(.center).padding(.horizontal)
                 if let message {
-                    ContentUnavailableView("Kamera nicht verfügbar", systemImage: "camera", description: Text(message))
+                    ContentUnavailableView("Kamera nicht verfügbar", systemImage: "camera", description: Text(L10n.text(message)))
                     Button("App-Einstellungen öffnen") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                     }

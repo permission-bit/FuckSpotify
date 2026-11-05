@@ -5,7 +5,7 @@ import AVFoundation
 import UIKit
 import PhotosUI
 
-private let appTint = Color(red: 0.20, green: 0.60, blue: 0.42)
+private let appTint = AppTheme.accent
 
 struct RootView: View {
     @StateObject private var macConnection = MacConnectionStore()
@@ -13,30 +13,24 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var context
     @State private var catalogError: String?
+    @State private var showingNowPlaying = false
     @Query(sort: \Song.title) private var songs: [Song]
     @EnvironmentObject private var player: AudioPlayer
     var body: some View {
         TabView {
-            HomeView().tabItem { Label("Start", systemImage: "house.fill") }
-            LibraryView().tabItem { Label("Bibliothek", systemImage: "music.note.list") }
-            SearchView().tabItem { Label("Suche", systemImage: "magnifyingglass") }
-            PlaylistsView().tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
+            HomeView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Start", systemImage: "house.fill") }
+            LibraryView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Bibliothek", systemImage: "music.note.list") }
+            SearchView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Suche", systemImage: "magnifyingglass") }
+            PlaylistsView().modifier(LegacyMiniPlayerInset { showingNowPlaying = true }).tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if player.current != nil { Color.clear.frame(height: 72) }
-        }
-        .contentMargins(.bottom, player.current == nil ? 16 : 104, for: .scrollContent)
-        .overlay(alignment: .bottom) {
-            if player.current != nil {
-                MiniPlayer()
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 78)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .modifier(ModernMiniPlayerAccessory { showingNowPlaying = true })
+        .musicScreen()
         .tint(appTint)
         .environmentObject(macConnection)
         .environmentObject(macImports)
+        .sheet(isPresented: $showingNowPlaying) {
+            NowPlayingView().musicScreen()
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .active { macConnection.setActive(true); macImports.setActive(true) }
             else if phase == .background { macImports.setActive(false); macConnection.setActive(false) }
@@ -44,7 +38,6 @@ struct RootView: View {
         .onChange(of: macConnection.status, initial: true) { _, status in
             macImports.setConnection(status == .connected ? macConnection.transferCredentials() : nil)
         }
-        .animation(.easeInOut(duration: 0.2), value: player.current?.id)
         .onAppear { player.attachHistoryContext(context); player.setLibrary(songs) }.onChange(of: songs.map(\.id)) { _, _ in player.setLibrary(songs) }
         .task {
             do {
@@ -53,11 +46,11 @@ struct RootView: View {
                 try MusicCatalog.seed(in: context)
                 macImports.attach(context.container)
             }
-            catch { catalogError = error.localizedDescription }
+            catch { catalogError = L10n.error(error) }
         }
         .alert("Musikkatalog konnte nicht geladen werden", isPresented: Binding(get: { catalogError != nil }, set: { if !$0 { catalogError = nil } })) {
             Button("OK") { catalogError = nil }
-        } message: { Text(catalogError ?? "") }
+        } message: { Text(L10n.text(catalogError ?? "")) }
     }
 }
 
@@ -72,8 +65,8 @@ struct HomeView: View {
         NavigationStack {
             List {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Deine Musik").font(.largeTitle.bold())
-                    Text("Offline hören, ganz ohne Ablenkung.").foregroundStyle(.secondary)
+                    Text("Deine Musik").font(.largeTitle.bold()).tracking(-0.6)
+                    Text("Offline hören, ganz ohne Ablenkung.").foregroundStyle(AppTheme.secondaryText)
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 12, trailing: 0))
@@ -82,13 +75,16 @@ struct HomeView: View {
                         Label {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("YouTube & Import").font(.headline)
-                                Text("Entdecken, Vorschau und eigene Musik importieren").font(.caption).foregroundStyle(.secondary)
-                            }.padding(.vertical, 6)
+                                Text("Entdecken, Vorschau und eigene Musik importieren").font(.caption).foregroundStyle(AppTheme.secondaryText)
+                            }.padding(.vertical, 10)
                         } icon: { Image(systemName: "play.rectangle.on.rectangle").font(.title2).foregroundStyle(.tint) }
                     }
                 }
+                .listRowBackground(AppTheme.surface)
                 if songs.isEmpty {
                     EmptyLibraryCard { importingFolder = true; showImporter = true }
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
                 } else {
                     Section {
                         ForEach(songs.prefix(8)) { SongRow(song: $0) }
@@ -101,11 +97,13 @@ struct HomeView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .musicScreen()
             .navigationTitle("Start")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Mac-Verbindung", systemImage: "desktopcomputer") { showingMacConnection = true }
-                        .accessibilityValue(macConnection.status.title)
+                        .accessibilityValue(Text(LocalizedStringKey(macConnection.status.title)))
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Einstellungen", systemImage: "gearshape") { showingAppSettings = true }
@@ -128,10 +126,11 @@ struct HomeView: View {
 
 struct EmptyLibraryCard: View {
     let action: () -> Void
-    var body: some View { VStack(spacing: 14) { Image(systemName: "music.note.list").font(.system(size: 38)).foregroundStyle(appTint); Text("Deine Bibliothek ist noch leer").font(.headline); Text("Importiere einen Musikordner, um loszulegen.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center); Button("Ordner auswählen", action: action).buttonStyle(.borderedProminent).tint(appTint) }.frame(maxWidth: .infinity).padding(28).background(.background, in: RoundedRectangle(cornerRadius: 20)) }
+    var body: some View { VStack(spacing: 14) { Image(systemName: "music.note.list").font(.system(size: 38)).foregroundStyle(appTint); Text("Deine Bibliothek ist noch leer").font(.headline); Text("Importiere einen Musikordner, um loszulegen.").font(.subheadline).foregroundStyle(AppTheme.secondaryText).multilineTextAlignment(.center); Button("Ordner auswählen", action: action).buttonStyle(.borderedProminent).tint(appTint).foregroundStyle(AppTheme.onAccent) }.frame(maxWidth: .infinity).padding(28).background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 20)) }
 }
 
 struct LibraryView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Song.title) private var songs: [Song]
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var player: AudioPlayer
@@ -145,12 +144,10 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                Picker("Ansicht", selection: $mode) {
-                    Text("Titel").tag(0)
-                    Text("Alben").tag(1)
-                    Text("Künstler").tag(2)
+                Group {
+                    if dynamicTypeSize.isAccessibilitySize { libraryPicker.pickerStyle(.menu) }
+                    else { libraryPicker.pickerStyle(.segmented) }
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
 
                 List(selection: $selectedIDs) {
@@ -159,8 +156,10 @@ struct LibraryView: View {
                             .onDelete { offsets in offsets.forEach { context.delete(songs[$0]) } }
                     } else {
                         ForEach(grouped, id: \.key) { item in
-                            Section(item.key) {
+                            Section {
                                 ForEach(item.value) { SongRow(song: $0).tag($0.id) }
+                            } header: {
+                                Text(mode == 1 ? MetadataText.album(item.key) : MetadataText.artist(item.key))
                             }
                         }
                     }
@@ -169,12 +168,13 @@ struct LibraryView: View {
                 .environment(\.editMode, $editMode)
                 .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(AppTheme.background)
+            .musicScreen()
             .navigationTitle("Bibliothek")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if editMode.isEditing {
-                        Button(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen") {
+                        Button(LocalizedStringKey(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen")) {
                             if selectedIDs.count == songs.count { selectedIDs.removeAll() }
                             else { selectedIDs = Set(songs.map(\.id)) }
                         }
@@ -182,7 +182,7 @@ struct LibraryView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if editMode.isEditing, !selectedIDs.isEmpty {
-                        Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
+                        Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText)
                     } else {
                         Button("Duplikate", systemImage: "doc.on.doc") { showingDuplicates = true }
                     }
@@ -218,6 +218,14 @@ struct LibraryView: View {
         showingActions = false
     }
 
+    private var libraryPicker: some View {
+        Picker("Ansicht", selection: $mode) {
+            Text("Titel").tag(0)
+            Text("Alben").tag(1)
+            Text("Künstler").tag(2)
+        }.frame(minHeight: 44)
+    }
+
     private var grouped: [(key: String, value: [Song])] { Dictionary(grouping: songs) { mode == 1 ? $0.album : $0.artist }.sorted { $0.key < $1.key } }
 }
 
@@ -230,7 +238,13 @@ struct SearchView: View {
         NavigationStack {
             List(filtered) { SongRow(song: $0) }
                 .listStyle(.insetGrouped)
+                .overlay {
+                    if filtered.isEmpty {
+                        ContentUnavailableView.search(text: query)
+                    }
+                }
                 .searchable(text: $query, prompt: "Titel, Künstler, Album oder Genre")
+                .musicScreen()
                 .navigationTitle("Suche")
         }
     }
@@ -275,7 +289,7 @@ struct PlaylistsView: View {
                                 PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist))
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(playlist.name)
-                                    if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(.secondary) }
+                                    if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(AppTheme.secondaryText) }
                                 }
                             }
                         }
@@ -292,13 +306,13 @@ struct PlaylistsView: View {
                     }
                 }
                 Section("Smart Playlists") {
-                    ForEach(SmartPlaylistKind.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }) { kind in
+                    ForEach(SmartPlaylistKind.allCases.filter { query.isEmpty || L10n.text($0.title).localizedStandardContains(query) || $0.title.localizedStandardContains(query) }) { kind in
                         NavigationLink(value: Route.smart(kind)) {
                             HStack(spacing: 12) {
                                 Image(systemName: kind.symbol).font(.title2).frame(width: 48, height: 48).foregroundStyle(appTint)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(kind.title)
-                                    Text("Smart Playlist · automatisch").font(.caption).foregroundStyle(.secondary)
+                                    Text(LocalizedStringKey(kind.title))
+                                    Text("Smart Playlist · automatisch").font(.caption).foregroundStyle(AppTheme.secondaryText)
                                 }
                             }
                         }
@@ -309,6 +323,7 @@ struct PlaylistsView: View {
             .listStyle(.insetGrouped)
             .environment(\.editMode, $editMode)
             .animation(.easeInOut(duration: 0.2), value: selectedIDs)
+            .musicScreen()
             .navigationTitle("Playlists")
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -334,14 +349,14 @@ struct PlaylistsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if editMode.isEditing {
-                        Button(selectedIDs.count == filteredPlaylists.count ? "Auswahl aufheben" : "Alle auswählen") {
+                        Button(LocalizedStringKey(selectedIDs.count == filteredPlaylists.count ? "Auswahl aufheben" : "Alle auswählen")) {
                             if selectedIDs.count == filteredPlaylists.count { selectedIDs.removeAll() }
                             else { selectedIDs = Set(filteredPlaylists.map(\.id)) }
                         }
                     } else { EditButton() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    if editMode.isEditing, !selectedIDs.isEmpty { Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary) }
+                    if editMode.isEditing, !selectedIDs.isEmpty { Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText) }
                 }
                 ToolbarItem(placement: .bottomBar) {
                     if editMode.isEditing {
@@ -401,9 +416,10 @@ struct PlaylistEditorView: View {
     var body: some View {
         NavigationStack {
             List {
+                Group {
                 Section("Name der Playlist") { TextField("Name", text: $name) }
                 Section("Cover") {
-                    HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 16) {
                         CoverImage(data: coverData, size: 96)
                         VStack(alignment: .leading, spacing: 8) {
                             PhotosPicker(selection: $photoItem, matching: .images) {
@@ -430,7 +446,7 @@ struct PlaylistEditorView: View {
                                     Artwork(data: song.artworkData)
                                     VStack(alignment: .leading) {
                                         Text(song.title).foregroundStyle(.primary).lineLimit(1)
-                                        Text(song.artist).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                        Text(MetadataText.artist(song.artist)).font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                                     }
                                     Spacer()
                                     Image(systemName: selectedIDs.contains(song.id) ? "checkmark.circle.fill" : "circle")
@@ -440,21 +456,23 @@ struct PlaylistEditorView: View {
                             .modifier(TrackSwipeActions(song: song))
                         }
                         if filteredSongs.isEmpty {
-                            Text(songs.isEmpty ? "Importiere Musik, um Titel auszuwählen." : "Keine passenden Titel gefunden.")
-                                .foregroundStyle(.secondary)
+                            Text(LocalizedStringKey(songs.isEmpty ? "Importiere Musik, um Titel auszuwählen." : "Keine passenden Titel gefunden."))
+                                .foregroundStyle(AppTheme.secondaryText)
                         }
                     }
                 } else {
-                    Section { Text("Artist-Playlists werden automatisch über den Künstler gepflegt.").foregroundStyle(.secondary) }
+                    Section { Text("Artist-Playlists werden automatisch über den Künstler gepflegt.").foregroundStyle(AppTheme.secondaryText) }
                 }
+                }.listRowBackground(AppTheme.surface)
             }
-            .navigationTitle(playlist == nil ? "Playlist erstellen" : "Playlist bearbeiten")
+            .musicScreen()
+            .navigationTitle(LocalizedStringKey(playlist == nil ? "Playlist erstellen" : "Playlist bearbeiten"))
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Titel, Künstler oder Album suchen")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(playlist == nil ? "Erstellen" : "Speichern") {
+                    Button(LocalizedStringKey(playlist == nil ? "Erstellen" : "Speichern")) {
                         savePlaylist()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -462,7 +480,7 @@ struct PlaylistEditorView: View {
             }
             .alert("Speichern fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") { errorMessage = nil }
-            } message: { Text(errorMessage ?? "") }
+            } message: { Text(L10n.text(errorMessage ?? "")) }
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
                 Task {
@@ -483,11 +501,12 @@ struct PlaylistEditorView: View {
                                 Artwork(data: song.artworkData)
                                 VStack(alignment: .leading) {
                                     Text(song.title).foregroundStyle(.primary)
-                                    Text(song.artist).font(.caption).foregroundStyle(.secondary)
+                                    Text(MetadataText.artist(song.artist)).font(.caption).foregroundStyle(AppTheme.secondaryText)
                                 }
                             }
                         }
                     }
+                    .musicScreen()
                     .navigationTitle("Song-Cover auswählen")
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { showingSongCovers = false } } }
                 }
@@ -539,7 +558,7 @@ struct PlaylistEditorView: View {
             }
             try context.save()
             dismiss()
-        } catch { errorMessage = error.localizedDescription }
+        } catch { errorMessage = L10n.error(error) }
     }
 }
 
@@ -561,15 +580,22 @@ struct PlaylistDetail: View {
         List(selection: $selectedIDs) {
             Section {
                 HStack(spacing: 16) {
-                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.compactMap(\.artworkData).first, size: 92)
+                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.compactMap(\.artworkData).first, size: 112)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(playlist.name).font(.title3.bold())
-                        Text(playlist.artistName.isEmpty ? "\(regularSongs.count) Titel" : "Artist playlist · \(artistSongs.count) Titel")
-                            .foregroundStyle(.secondary)
+                        Text(L10n.count("%lld Titel", playlist.artistName.isEmpty ? regularSongs.count : artistSongs.count))
+                            .foregroundStyle(AppTheme.secondaryText)
                     }
                     Spacer()
                 }
                 .padding(.vertical, 8)
+                Button("Abspielen", systemImage: "play.fill") {
+                    if let first = displayedSongs.first { player.play(first, in: displayedSongs) }
+                }
+                .buttonStyle(.borderedProminent)
+                .foregroundStyle(AppTheme.onAccent)
+                .controlSize(.large)
+                .disabled(displayedSongs.isEmpty)
             }
             .listRowBackground(Color.clear)
             if !playlist.artistName.isEmpty {
@@ -595,12 +621,13 @@ struct PlaylistDetail: View {
         .listStyle(.insetGrouped)
         .environment(\.editMode, $editMode)
         .animation(.easeInOut(duration: 0.2), value: regularSongs.map(\.id))
+        .musicScreen()
         .navigationTitle(playlist.name)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if playlist.artistName.isEmpty, !regularSongs.isEmpty {
                     if editMode.isEditing {
-                        Button(selectedIDs.count == regularSongs.count ? "Auswahl aufheben" : "Alle auswählen") {
+                        Button(LocalizedStringKey(selectedIDs.count == regularSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
                             if selectedIDs.count == regularSongs.count { selectedIDs.removeAll() }
                             else { selectedIDs = Set(regularSongs.map(\.id)) }
                         }
@@ -609,7 +636,7 @@ struct PlaylistDetail: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if editMode.isEditing, !selectedIDs.isEmpty {
-                    Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(.secondary)
+                    Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText)
                 } else {
                     Menu {
                         Button("Playlist und Cover bearbeiten", systemImage: "pencil") { showingEditor = true }
@@ -685,10 +712,10 @@ struct PlaylistSongRow: View {
                 Artwork(data: song.artworkData)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(song.title).font(.body.weight(.medium)).lineLimit(1)
-                    Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                 }
                 Spacer()
-                if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }
+                if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(AppTheme.accent).font(.caption) }
             }
         }
         .buttonStyle(.plain)
@@ -726,7 +753,7 @@ struct CoverImage: View {
             } else {
                 Image(systemName: "music.note.list")
                     .font(.system(size: size * 0.38, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.secondaryText)
             }
         }
         .frame(width: size, height: size)
@@ -756,7 +783,8 @@ struct LibrarySelectionActions: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Auswahl") { Text("\(songs.count) Titel ausgewählt").foregroundStyle(.secondary) }
+                Group {
+                Section("Auswahl") { Text("\(songs.count) Titel ausgewählt").foregroundStyle(AppTheme.secondaryText) }
                 Section("Zu bestehender Playlist hinzufügen") {
                     ForEach(playlists.filter { $0.artistName.isEmpty }) { playlist in
                         Button {
@@ -766,7 +794,7 @@ struct LibrarySelectionActions: View {
                         }
                     }
                     if playlists.filter({ $0.artistName.isEmpty }).isEmpty {
-                        Text("Noch keine normale Playlist vorhanden.").foregroundStyle(.secondary)
+                        Text("Noch keine normale Playlist vorhanden.").foregroundStyle(AppTheme.secondaryText)
                     }
                 }
                 Section("Neue Playlist") {
@@ -780,19 +808,21 @@ struct LibrarySelectionActions: View {
                         finish()
                     }
                 }
+                }.listRowBackground(AppTheme.surface)
             }
+            .musicScreen()
             .navigationTitle("Auswahlaktionen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Fertig") { finish() } } }
             .alert("Aktion fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") { errorMessage = nil }
-            } message: { Text(errorMessage ?? "") }
+            } message: { Text(L10n.text(errorMessage ?? "")) }
         }
     }
 
     private func add(to playlist: Playlist) {
         playlist.appendSongs(songs.map(\.id))
-        do { try context.save(); finish() } catch { errorMessage = error.localizedDescription }
+        do { try context.save(); finish() } catch { errorMessage = L10n.error(error) }
     }
 
     private func createPlaylist() {
@@ -801,7 +831,7 @@ struct LibrarySelectionActions: View {
         let playlist = Playlist(name: name)
         playlist.appendSongs(songs.map(\.id))
         context.insert(playlist)
-        do { try context.save(); finish() } catch { context.delete(playlist); errorMessage = error.localizedDescription }
+        do { try context.save(); finish() } catch { context.delete(playlist); errorMessage = L10n.error(error) }
     }
 
     private func finish() {
@@ -819,10 +849,34 @@ struct SongRow: View {
     @State private var showingGenreEditor = false
     @State private var genreError: String?
     var body: some View {
-        Button { if let playbackCollection { player.play(song, in: playbackCollection) } else { player.play(song) } } label: { HStack(spacing: 12) { Artwork(data: song.artworkData); VStack(alignment: .leading, spacing: 3) { Text(song.title).font(.body.weight(.medium)).lineLimit(1); Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }; Spacer(minLength: 4); if song.isFavorite { Image(systemName: "heart.fill").foregroundStyle(.pink).font(.caption) }; Image(systemName: "ellipsis").foregroundStyle(.tertiary).font(.caption) }.contentShape(Rectangle()) }.buttonStyle(.plain).padding(.vertical, 5)
+        Button {
+            if let playbackCollection { player.play(song, in: playbackCollection) }
+            else { player.play(song) }
+        } label: {
+            HStack(spacing: 12) {
+                Artwork(data: song.artworkData).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(song.title).font(.body.weight(.medium))
+                        .foregroundStyle(player.current?.id == song.id ? AppTheme.accent : AppTheme.text)
+                        .lineLimit(2)
+                    Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))")
+                        .font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                if player.current?.id == song.id {
+                    Image(systemName: "waveform").foregroundStyle(AppTheme.accent).accessibilityHidden(true)
+                }
+                if song.isFavorite {
+                    Image(systemName: "heart.fill").foregroundStyle(AppTheme.accent).font(.caption).accessibilityHidden(true)
+                }
+            }.frame(minHeight: 52).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).padding(.vertical, 4)
+        .listRowBackground(AppTheme.surface)
+        .listRowSeparatorTint(AppTheme.separator)
         .modifier(TrackSwipeActions(song: song))
         .contextMenu {
-            Button(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten", systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }
+            Button(LocalizedStringKey(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten"), systemImage: song.isFavorite ? "heart.slash" : "heart") { song.isFavorite.toggle() }
             Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
             if song.genreOverrideID != nil {
                 Button("Originalgenre wiederherstellen", systemImage: "arrow.uturn.backward") {
@@ -830,7 +884,7 @@ struct SongRow: View {
                         do {
                             try await SongGenreStore.loadOriginal(song, context: context)
                             try SongGenreStore.restore(song, context: context)
-                        } catch { genreError = error.localizedDescription }
+                        } catch { genreError = L10n.error(error) }
                     }
                 }
             }
@@ -849,7 +903,7 @@ struct SongRow: View {
         .sheet(isPresented: $showingGenreEditor) { SongGenreEditorView(song: song) }
         .alert("Genre konnte nicht wiederhergestellt werden", isPresented: Binding(get: { genreError != nil }, set: { if !$0 { genreError = nil } })) {
             Button("OK") { genreError = nil }
-        } message: { Text(genreError ?? "") }
+        } message: { Text(L10n.text(genreError ?? "")) }
     }
 }
 
@@ -867,7 +921,7 @@ struct TrackSwipeActions: ViewModifier {
             Button("Warteschlange", systemImage: "text.badge.plus") {
                 player.addToQueue(song)
             }
-            .tint(.blue)
+            .tint(AppTheme.surface)
         }
     }
 }
@@ -875,26 +929,36 @@ struct TrackSwipeActions: ViewModifier {
 struct Artwork: View {
     let data: Data?
     var size: CGFloat = 48
+    @State private var thumbnail: UIImage?
+    @Environment(\.displayScale) private var displayScale
+    private struct Request: Hashable { let data: Data?; let pixels: Int }
 
     var body: some View {
         Group {
-            if let data, let image = UIImage(data: data) {
+            if let image = thumbnail {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
                 Image(systemName: "music.note")
                     .font(.system(size: size * 0.45))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.secondaryText)
             }
         }
         .frame(width: size, height: size)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
         .clipShape(RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
+        .task(id: Request(data: data, pixels: max(1, Int(size * displayScale)))) {
+            thumbnail = nil
+            guard let data else { return }
+            let image = await ArtworkThumbnails.image(data, pixels: max(1, Int(size * displayScale)))
+            guard !Task.isCancelled else { return }
+            thumbnail = image
+        }
     }
 }
 
 struct MiniPlayer: View {
     @EnvironmentObject private var player: AudioPlayer
-    @State private var showingNowPlaying = false
+    let onOpen: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -910,32 +974,36 @@ struct MiniPlayer: View {
             .padding(.horizontal, 14)
 
             HStack(spacing: 10) {
-                Button { showingNowPlaying = true } label: {
+                Button(action: onOpen) {
                     HStack(spacing: 10) {
-                        Artwork(data: player.current?.artworkData)
+                        Artwork(data: player.current?.artworkData, size: 38)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(player.current?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1)
-                            Text(player.current?.artist ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            Text(MetadataText.artist(player.current?.artist ?? "")).font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                         }
                     }
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel(Text("\(player.current?.title ?? ""), \(MetadataText.artist(player.current?.artist ?? ""))"))
+                .accessibilityHint("Player öffnen")
 
-                Button { player.previous() } label: { Image(systemName: "backward.fill") }
-                    .accessibilityLabel("Vorheriger Titel")
-                Button { player.toggle() } label: { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill").font(.title3) }
-                    .accessibilityLabel(player.isPlaying ? "Pause" : "Wiedergabe")
-                Button { player.next() } label: { Image(systemName: "forward.fill") }
+                Button { player.toggle() } label: {
+                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title3.weight(.semibold)).frame(width: 44, height: 44)
+                }
+                    .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Wiedergabe"))
+                Button { player.next() } label: { Image(systemName: "forward.fill").frame(width: 44, height: 44) }
                     .accessibilityLabel("Nächster Titel")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(.white.opacity(0.12)))
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
-        .sheet(isPresented: $showingNowPlaying) { NowPlayingView() }
+        .frame(maxWidth: .infinity)
+        .frame(height: 62)
+        .clipped()
+        .modifier(MiniPlayerSurface())
+        .foregroundStyle(AppTheme.text)
     }
 }
 
@@ -948,35 +1016,45 @@ struct NowPlayingView: View {
     @State private var showingGenreEditor = false
     @State private var showingPlaybackSettings = false
     @State private var showingSleepTimer = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
             List(selection: $selectedQueueIDs) {
                 Section {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 20) {
                         GeometryReader { geometry in
                             Artwork(data: player.current?.artworkData, size: geometry.size.width)
                         }
                         .aspectRatio(1, contentMode: .fit)
                         .frame(maxWidth: 420)
+                        .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
                         .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(player.current?.title ?? "").font(.title2.bold())
-                            Text(player.current?.artist ?? "").foregroundStyle(.secondary)
+                            Text(player.current?.title ?? "").font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
+                            Text(MetadataText.artist(player.current?.artist ?? "")).foregroundStyle(AppTheme.secondaryText)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contextMenu {
                             Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
                         }
                         Slider(value: Binding(get: { player.progress }, set: player.seek))
+                            .accessibilityLabel("Wiedergabeposition")
+                            .accessibilityValue(time(player.progress * (player.current?.duration ?? 0)))
                         HStack {
                             Text(time(player.progress * (player.current?.duration ?? 0)))
                             Spacer()
                             Text(time(player.current?.duration ?? 0))
                         }
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppTheme.secondaryText)
                         controls
+                        HStack(spacing: 12) {
+                            Image(systemName: "speaker.fill").accessibilityHidden(true)
+                            SystemVolumeControl().frame(height: 44).accessibilityLabel("Lautstärke")
+                            Image(systemName: "speaker.wave.3.fill").accessibilityHidden(true)
+                        }
+                        .foregroundStyle(AppTheme.secondaryText)
                         HStack(spacing: 48) {
                             Button { player.seekBy(-15) } label: {
                                 Image(systemName: "gobackward.15").font(.title2)
@@ -997,7 +1075,7 @@ struct NowPlayingView: View {
                                 if let deadline = player.sleepDeadline {
                                     Text(deadline, style: .timer).monospacedDigit()
                                 } else {
-                                    Text(player.sleepAfterCurrentSong ? "Stoppt nach diesem Titel" : "Sleep Timer")
+                                    Text(LocalizedStringKey(player.sleepAfterCurrentSong ? "Stoppt nach diesem Titel" : "Sleep Timer"))
                                 }
                             }
                         }
@@ -1005,8 +1083,9 @@ struct NowPlayingView: View {
                     }
                     .padding(.vertical, 18)
                 }
-                .listRowBackground(appTint.opacity(0.12))
-                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.visible)
+                .listRowSeparatorTint(AppTheme.separator)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Wird wiedergegeben: \(player.current?.title ?? String())")
                 if !player.queue.isEmpty {
@@ -1029,7 +1108,10 @@ struct NowPlayingView: View {
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, $editMode)
-            .animation(.easeInOut(duration: 0.2), value: player.queue.map(\.id))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: player.queue.map(\.id))
+            .musicScreen()
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.header.ignoresSafeArea())
             .navigationTitle("Wiedergabe")
             .sheet(isPresented: $showingGenreEditor) {
                 if let song = player.current { SongGenreEditorView(song: song) }
@@ -1066,29 +1148,38 @@ struct NowPlayingView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 28) {
-            Button { player.previous() } label: {
-                Image(systemName: "backward.end.fill").font(.title2)
-            }
-            .accessibilityLabel("Vorheriger Titel")
+        HStack(spacing: 0) {
             Button { player.toggleShuffle() } label: {
-                Image(systemName: "shuffle").foregroundStyle(player.shuffle ? appTint : .primary)
+                Image(systemName: "shuffle").foregroundStyle(player.shuffle ? appTint : AppTheme.secondaryText)
+                    .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Zufallswiedergabe")
-            .accessibilityValue(player.shuffle ? "Ein" : "Aus")
-            Button { player.toggle() } label: {
-                Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 62))
+            .accessibilityValue(LocalizedStringKey(player.shuffle ? "Ein" : "Aus"))
+            Spacer(minLength: 0)
+            Button { player.previous() } label: {
+                Image(systemName: "backward.end.fill").font(.title2).frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel(player.isPlaying ? "Pause" : "Wiedergabe")
+            .accessibilityLabel("Vorheriger Titel")
+            Spacer(minLength: 0)
+            Button { player.toggle() } label: {
+                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.title.weight(.semibold)).foregroundStyle(AppTheme.onAccent)
+                    .frame(width: 72, height: 72).background(appTint, in: Circle())
+            }
+            .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Wiedergabe"))
+            Spacer(minLength: 0)
             Button { player.next() } label: {
-                Image(systemName: "forward.end.fill").font(.title2)
+                Image(systemName: "forward.end.fill").font(.title2).frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Nächster Titel")
+            Spacer(minLength: 0)
             Button { player.cycleRepeatMode() } label: {
                 Image(systemName: player.repeatMode == 1 ? "repeat.1" : "repeat")
+                    .foregroundStyle(player.repeatMode == 0 ? AppTheme.secondaryText : appTint)
+                    .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Titel wiederholen")
+            .accessibilityValue(LocalizedStringKey(player.repeatMode == 0 ? "Aus" : player.repeatMode == 1 ? "Ein Titel" : "Alle Titel"))
         }
         .buttonStyle(.plain)
     }
@@ -1107,7 +1198,7 @@ struct QueueTrackRow: View {
             Artwork(data: song.artworkData)
             VStack(alignment: .leading, spacing: 3) {
                 Text(song.title).font(.body.weight(.medium)).lineLimit(1)
-                Text("\(song.artist) · \(song.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
             }
             Spacer(minLength: 4)
             Image(systemName: "line.3.horizontal")
@@ -1118,7 +1209,7 @@ struct QueueTrackRow: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button("Entfernen", systemImage: "trash", role: .destructive) { player.removeFromQueue(song) }
         }
-        .accessibilityLabel("Kommender Titel: \(song.title), \(song.artist)")
+        .accessibilityLabel("Kommender Titel: \(song.title), \(MetadataText.artist(song.artist))")
     }
 }
 

@@ -75,12 +75,13 @@ struct SmartPlaylistDetail: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(kind.title)
+        .musicScreen()
+        .navigationTitle(LocalizedStringKey(kind.title))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { EditButton() }
             ToolbarItem(placement: .topBarLeading) {
                 if editMode.isEditing {
-                    Button(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen") {
+                    Button(LocalizedStringKey(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen")) {
                         if selectedIDs.count == songs.count { selectedIDs.removeAll() }
                         else { selectedIDs = Set(songs.map(\.id)) }
                     }

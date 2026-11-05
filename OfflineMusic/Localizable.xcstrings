@@ -1,11 +1,40 @@
 {
   "sourceLanguage" : "de",
   "strings" : {
+    " · läuft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · running"
+          }
+        }
+      }
+    },
+    " Prüfe auch die Auftragsliste; ein erneuter Versuch mit derselben Auswahl verwendet dieselbe Auftragsanfrage." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Also check the job list; retrying with the same selection reuses the same job request."
+          }
+        }
+      }
+    },
     "%@" : {
 
     },
     "%@\n\nBestätige nur, wenn du den QR-Code gerade direkt vom Terminal deines eigenen Macs gescannt hast. Die TLS-Identität wird anhand des Codes geprüft." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nOnly confirm if you just scanned the QR code directly from Terminal on your own Mac. The code is used to verify the TLS identity."
+          }
+        }
+      }
     },
     "%@ · %@" : {
       "localizations" : {
@@ -38,17 +67,93 @@
       }
     },
     "%@ ausgewählt" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ selected"
+          }
+        }
+      }
     },
     "%@ ausstehend" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pending"
+          }
+        }
+      }
+    },
+    "%@ auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select %@"
+          }
+        }
+      }
+    },
+    "%@ Dateien gelöscht. Einige Auswahlen wurden zum Schutz der letzten Version übersprungen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ files deleted. Some selections were skipped to preserve the last version."
+          }
+        }
+      }
+    },
+    "%@ fehlgeschlagene Imports erneut versuchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry %@ Failed Imports"
+          }
+        }
+      }
+    },
+    "%@ fertig · %@ nicht verarbeitet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ready · %@ not processed"
+          }
+        }
+      }
+    },
+    "%@ fertig · %@ nicht verarbeitet · läuft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ready · %@ not processed · running"
+          }
+        }
+      }
     },
     "%@ fertig · %@ nicht verarbeitet%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ fertig · %2$@ nicht verarbeitet%3$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ready · %@ not processed%@"
           }
         }
       }
@@ -60,20 +165,98 @@
             "state" : "new",
             "value" : "%1$@ importiert · %2$@ bereits vorhanden"
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ imported · %@ already present"
+          }
+        }
+      }
+    },
+    "%@ Minuten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ minutes"
+          }
+        }
+      }
+    },
+    "%@ Minuten, %@ Sekunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ minutes, %@ seconds"
+          }
         }
       }
     },
     "%@ nicht verarbeitet" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ not processed"
+          }
+        }
+      }
+    },
+    "%@ Prüfe auch die Auftragsliste; ein erneuter Versuch mit derselben Auswahl verwendet dieselbe Auftragsanfrage." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Also check the job list; retrying with the same selection reuses the same job request."
+          }
+        }
+      }
+    },
+    "%@ Sekunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seconds"
+          }
+        }
+      }
     },
     "%@ Titel" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ songs"
+          }
+        }
+      }
     },
     "%@ Titel auf dem Mac fehlgeschlagen oder nicht verfügbar. Fertige Titel bleiben erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ tracks failed or are unavailable on your Mac. Ready tracks are preserved."
+          }
+        }
+      }
     },
     "%@ Titel ausgewählt" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ songs selected"
+          }
+        }
+      }
     },
     "%@ von %@ auf dem Mac fertig" : {
       "localizations" : {
@@ -82,19 +265,603 @@
             "state" : "new",
             "value" : "%1$@ von %2$@ auf dem Mac fertig"
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ ready on Mac"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@: Fortschritt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: Progress"
+          }
+        }
+      }
+    },
+    "%lld ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selected"
+          }
+        }
+      }
+    },
+    "%lld ausstehend" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pending"
+          }
+        }
+      }
+    },
+    "%lld Dateien gelöscht. Einige Auswahlen wurden zum Schutz der letzten Version übersprungen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Datei gelöscht. Einige Auswahlen wurden zum Schutz der letzten Version übersprungen."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Dateien gelöscht. Einige Auswahlen wurden zum Schutz der letzten Version übersprungen."
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld file deleted. Some selections were skipped to preserve the last version."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld files deleted. Some selections were skipped to preserve the last version."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld fehlgeschlagene Imports erneut versuchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry %lld Failed Imports"
+          }
+        }
+      }
+    },
+    "%lld fertig · %lld nicht verarbeitet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ready · %lld not processed"
+          }
+        }
+      }
+    },
+    "%lld fertig · %lld nicht verarbeitet · läuft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ready · %lld not processed · running"
+          }
+        }
+      }
+    },
+    "%lld importiert · %lld bereits vorhanden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld imported · %lld already present"
+          }
+        }
+      }
+    },
+    "%lld Minuten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Minuten"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Minuten, %lld Sekunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld minutes, %lld seconds"
+          }
+        }
+      }
+    },
+    "%lld nicht verarbeitet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld not processed"
+          }
+        }
+      }
+    },
+    "%lld Sekunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Sekunde"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Sekunden"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld second"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Titel"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Titel"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld song"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld songs"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Titel auf dem Mac fehlgeschlagen oder nicht verfügbar. Fertige Titel bleiben erhalten." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld tracks failed or are unavailable on your Mac. Ready tracks are preserved."
+          }
+        }
+      }
+    },
+    "%lld Titel ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Titel ausgewählt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Titel ausgewählt"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld song selected"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld songs selected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld von %lld auf dem Mac fertig" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld ready on Mac"
+          }
+        }
+      }
+    },
+    "15 Sekunden vor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip forward 15 seconds"
+          }
+        }
+      }
+    },
+    "15 Sekunden zurück" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip back 15 seconds"
+          }
+        }
+      }
+    },
+    "Abbrechen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Abgebrochen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelled"
+          }
+        }
+      }
+    },
+    "Abspielen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        }
+      }
+    },
+    "Adresse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address"
+          }
+        }
+      }
+    },
+    "Ähnliche Angaben und Dauer. Bitte Versionen vergleichen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Similar metadata and duration. Compare the versions."
+          }
+        }
+      }
+    },
+    "Aktion fehlgeschlagen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action failed"
+          }
+        }
+      }
+    },
+    "Aktionen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions"
+          }
+        }
+      }
+    },
+    "Aktionen · %@ ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions · %@ selected"
+          }
+        }
+      }
+    },
+    "Aktionen · %lld ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions · %lld selected"
+          }
+        }
+      }
+    },
+    "Aktiver Timer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active Timer"
+          }
+        }
+      }
+    },
+    "Aktives Genre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current genre"
+          }
         }
       }
     },
     "Aktiviere YouTube Data API v3 für dein Google-Cloud-Projekt und beschränke den Schlüssel auf diese API. Er wird auf diesem Gerät gespeichert und nicht an deinen Mac gesendet." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable YouTube Data API v3 for your Google Cloud project and restrict the key to this API. The key is stored on this device and is not sent to your Mac."
+          }
+        }
+      }
+    },
+    "Aktualisiere den Companion auf dem Mac und starte ihn neu." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update the Companion on the Mac and restart it."
+          }
+        }
+      }
     },
     "Aktualisiert sich automatisch. Ein Titel zählt nach 30 gehörten Sekunden oder der Hälfte seiner Dauer als gespielt." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates automatically. A song counts as played after 30 seconds of listening or half its duration."
+          }
+        }
+      }
     },
     "Alben" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albums"
+          }
+        }
+      }
+    },
+    "Album" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
+          }
+        }
+      }
+    },
+    "Alle auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select all"
+          }
+        }
+      }
+    },
+    "Alle auswählen (weitere Seiten laden)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All (Load More Pages)"
+          }
+        }
+      }
+    },
+    "Alle Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All songs"
+          }
+        }
+      }
+    },
+    "Alle Titel von %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All songs by %@"
+          }
+        }
+      }
+    },
+    "Alle verfügbaren Dateien auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All Available Files"
+          }
+        }
+      }
     },
     "Allgemein" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -160,6 +927,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通用"
+          }
+        }
+      }
+    },
+    "Als Nächstes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play next"
+          }
+        }
+      }
+    },
+    "Als Nächstes · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up next · %@"
+          }
+        }
+      }
+    },
+    "Als Nächstes · %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up next · %lld"
+          }
+        }
+      }
+    },
+    "Als Nächstes abspielen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play next"
+          }
+        }
+      }
+    },
+    "An Warteschlange anhängen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to queue"
           }
         }
       }
@@ -235,20 +1057,364 @@
         }
       }
     },
+    "API einrichten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Up API"
+          }
+        }
+      }
+    },
+    "App-Einstellungen öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open App Settings"
+          }
+        }
+      }
+    },
     "Artist playlist · %@" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Künstler-Playlist · %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist playlist · %@"
+          }
+        }
+      }
     },
     "Artist-Playlists werden automatisch über den Künstler gepflegt." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Künstler-Playlists werden automatisch über den Künstler gepflegt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist playlists update automatically based on the artist."
+          }
+        }
+      }
     },
     "Auf dem Mac „pair --name \"Mein iPhone\"“ ausführen. Die gesamte JSON-Ausgabe hier einfügen oder die Felder unten manuell ausfüllen. Der Code ist fünf Minuten gültig." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run “pair --name \"My iPhone\"” on your Mac. Paste the entire JSON output here or fill in the fields below manually. The code is valid for five minutes."
+          }
+        }
+      }
+    },
+    "Auf dem Mac fehlt ein benötigtes Konvertierungswerkzeug." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A required conversion tool is missing on the Mac."
+          }
+        }
+      }
+    },
+    "Auf dem Mac nicht verfügbar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable on Mac"
+          }
+        }
+      }
+    },
+    "Auf Mac widerrufen und entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke on Mac and Remove"
+          }
+        }
+      }
+    },
+    "Auf YouTube öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open on YouTube"
+          }
+        }
+      }
+    },
+    "Auf YouTube suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search YouTube"
+          }
+        }
+      }
+    },
+    "Auftrag abbrechen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Job"
+          }
+        }
+      }
+    },
+    "Aufträge auf deinem Mac" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobs on Your Mac"
+          }
+        }
+      }
+    },
+    "Aufträge prüfen …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking Jobs …"
+          }
+        }
+      }
+    },
+    "Aus" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Aus Favoriten entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from favorites"
+          }
+        }
+      }
+    },
+    "Aus Playlist entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from playlist"
+          }
+        }
+      }
+    },
+    "Ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected"
+          }
+        }
+      }
+    },
+    "Auswahl" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selection"
+          }
+        }
+      }
+    },
+    "Auswahl als Vorschau öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview Selection"
+          }
+        }
+      }
+    },
+    "Auswahl an Warteschlange anhängen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add selection to queue"
+          }
+        }
+      }
+    },
+    "Auswahl aufheben" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deselect all"
+          }
+        }
+      }
+    },
+    "Auswahl entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove selection"
+          }
+        }
+      }
+    },
+    "Auswahlaktionen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selection actions"
+          }
+        }
+      }
+    },
+    "Automatische Zuordnung" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic assignment"
+          }
+        }
+      }
+    },
+    "Bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
+    },
+    "Behalten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep"
+          }
+        }
+      }
+    },
+    "Behalten: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep: %@"
+          }
+        }
+      }
+    },
+    "Bekannte Künstler durchsuchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse known artists"
+          }
+        }
+      }
+    },
+    "Bereit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready"
+          }
+        }
+      }
+    },
+    "Bereit zum Import" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready to import"
+          }
+        }
+      }
     },
     "Bereitet den nächsten Titel vor und startet kompatible Dateien direkt im Anschluss. Verfügbare Encoderinformationen werden vom Audiodecoder berücksichtigt. Bei aktivem Crossfade werden Titel stattdessen überblendet." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepares the next track and starts compatible files immediately after the current track ends. The audio decoder uses available encoder information. When crossfade is enabled, tracks overlap instead."
+          }
+        }
+      }
     },
     "Bereits fertige oder importierte Songs bleiben erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs that are already ready or imported are preserved."
+          }
+        }
+      }
     },
     "Bibliothek" : {
       "extractionState" : "stale",
@@ -321,11 +1487,174 @@
         }
       }
     },
+    "Bibliothek wird aktualisiert …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating Library …"
+          }
+        }
+      }
+    },
+    "Bibliothekseinträge löschen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove songs from the library?"
+          }
+        }
+      }
+    },
     "Bitte auswählen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an option"
+          }
+        }
+      }
     },
     "Blendet aufeinanderfolgende Titel ineinander. Bei kurzen Titeln wird die Überblendung automatisch verkürzt." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fades consecutive tracks into each other. The crossfade is automatically shortened for short tracks."
+          }
+        }
+      }
+    },
+    "Cover" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork"
+          }
+        }
+      }
+    },
+    "Cover ändern" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change artwork"
+          }
+        }
+      }
+    },
+    "Cover eines Playlist-Titels" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use song artwork"
+          }
+        }
+      }
+    },
+    "Cover entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove artwork"
+          }
+        }
+      }
+    },
+    "Create Artist +" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Künstler erstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create artist"
+          }
+        }
+      }
+    },
+    "Crossfade" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crossfade"
+          }
+        }
+      }
+    },
+    "Crossfade-Dauer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crossfade Duration"
+          }
+        }
+      }
+    },
+    "Das YouTube-API-Kontingent ist erreicht. Versuche es später erneut und prüfe dein Kontingent in der Google Cloud Console." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The YouTube API quota has been reached. Try again later and check your quota in the Google Cloud Console."
+          }
+        }
+      }
+    },
+    "Das Zeitlimit wurde erreicht. Versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The time limit was reached. Try again."
+          }
+        }
+      }
+    },
+    "Datei auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose file"
+          }
+        }
+      }
+    },
+    "Datei prüfen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking file"
+          }
+        }
+      }
     },
     "Dateien importieren" : {
       "extractionState" : "stale",
@@ -394,6 +1723,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导入文件"
+          }
+        }
+      }
+    },
+    "Dateien laden …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Files …"
+          }
+        }
+      }
+    },
+    "Dateien und Bibliothekseinträge löschen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete files and library entries"
+          }
+        }
+      }
+    },
+    "Dateiname" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filename"
+          }
+        }
+      }
+    },
+    "Dauer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duration"
           }
         }
       }
@@ -538,28 +1911,298 @@
         }
       }
     },
+    "Deine Playlists" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your playlists"
+          }
+        }
+      }
+    },
     "Der gerade spielende Titel läuft weiter." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current song will keep playing."
+          }
+        }
+      }
+    },
+    "Der gespeicherte Importstatus kann nicht gelesen werden. Es werden keine Dateien automatisch erneut importiert." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The saved import status could not be read. No files will be automatically imported again."
+          }
+        }
+      }
     },
     "Der Mac verarbeitet den Auftrag noch." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Mac is still processing the job."
+          }
+        }
+      }
+    },
+    "Der Mac-Dienst meldet einen Fehler (HTTP %@)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Mac service reported an error (HTTP %@)."
+          }
+        }
+      }
+    },
+    "Der Mac-Dienst meldet einen Fehler (HTTP %lld)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Mac service reported an error (HTTP %lld)."
+          }
+        }
+      }
+    },
+    "Der SHA-256-Fingerabdruck muss aus 64 Hexadezimalzeichen bestehen. Übernimm ihn direkt vom Mac." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The SHA-256 fingerprint must contain 64 hexadecimal characters. Copy it directly from your Mac."
+          }
+        }
+      }
+    },
+    "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The operation could not be completed. Please try again."
+          }
+        }
+      }
+    },
+    "Der Zugang ist ungültig oder widerrufen. Bei der Erstkopplung kann auch der Einmalcode abgelaufen oder verbraucht sein." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access is invalid or revoked. During initial pairing, the one-time code may also have expired or already been used."
+          }
+        }
+      }
+    },
+    "Der Zugang konnte nicht sicher im Schlüsselbund gelesen oder gespeichert werden. Entsperre das iPhone und versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access credentials could not be securely read from or saved to the Keychain. Unlock your iPhone and try again."
+          }
+        }
+      }
+    },
+    "Deutsch und Englisch sind vollständig übersetzt. Weitere Sprachen sind teilweise übersetzt." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "German and English are fully translated. Other languages are partially translated."
+          }
+        }
+      }
+    },
+    "Die Antwort passt nicht zum Companion-Protokoll. Prüfe die Version des Mac-Dienstes." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The response does not match the Companion protocol. Check the Mac service version."
+          }
+        }
+      }
     },
     "Die App übernimmt fertige MP3-Dateien im Vordergrund. Bei Unterbrechungen setzt sie den Import beim nächsten Öffnen fort. Geprüfte Downloads und Importzuordnungen bleiben erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app imports ready MP3 files while in the foreground. If interrupted, the import resumes the next time you open the app. Verified downloads and import assignments are preserved."
+          }
+        }
+      }
     },
     "Die Audiodateien bleiben in deiner Bibliothek erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The audio files will remain in your library."
+          }
+        }
+      }
     },
     "Die ausgewählten Playlists und ihre Verknüpfungen werden entfernt. Songs und Audiodateien bleiben erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected playlists and their song links will be removed. Songs and audio files will be kept."
+          }
+        }
+      }
     },
     "Die ausgewählten Titel werden aus der Bibliothek entfernt. Audiodateien bleiben erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected songs will be removed from the library. Audio files will be kept."
+          }
+        }
+      }
+    },
+    "Die Datei ist unvollständig oder beschädigt. Größe, Prüfsumme oder Audioformat stimmen nicht." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file is incomplete or damaged. Its size, checksum or audio format does not match."
+          }
+        }
+      }
+    },
+    "Die Dateiangaben des Macs sind ungültig oder haben sich geändert." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Mac's file information is invalid or has changed."
+          }
+        }
+      }
+    },
+    "Die ersten 1.000 Listeneinträge sind geladen. Öffne längere Playlists direkt auf YouTube." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The first 1,000 entries have been loaded. Open longer playlists directly on YouTube."
+          }
+        }
+      }
+    },
+    "Die Kamera ist momentan nicht verfügbar. Öffne den Scanner erneut oder füge die Kopplungsdaten manuell ein." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The camera is currently unavailable. Open the scanner again or paste the pairing data manually."
+          }
+        }
+      }
+    },
+    "Die Kamera konnte nicht gestartet werden. Schließe andere Kamera-Apps und versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The camera could not be started. Close other camera apps and try again."
+          }
+        }
+      }
+    },
+    "Die Kopplungsdaten sind abgelaufen. Erzeuge auf dem Mac einen neuen Code." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The pairing data has expired. Generate a new code on the Mac."
+          }
+        }
+      }
     },
     "Die Lautstärke wird in den letzten 5 Sekunden reduziert. Der Timer zählt auch während einer Pause weiter." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The volume is reduced during the last 5 seconds. The timer continues counting while playback is paused."
+          }
+        }
+      }
+    },
+    "Die Mac-Suche ist nicht verfügbar. Erlaube lokalen Netzwerkzugriff in den iOS-Einstellungen oder nutze die manuelle Adresse." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac discovery is unavailable. Allow local network access in iOS Settings or enter the address manually."
+          }
+        }
+      }
+    },
+    "Die Quelle konnte auf dem Mac nicht vollständig verarbeitet werden (%@)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The source could not be fully processed on the Mac (%@)."
+          }
+        }
+      }
+    },
+    "Die Quelle oder der Auftrag ist nicht mehr verfügbar. Aktualisiere die Liste." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The source or job is no longer available. Refresh the list."
+          }
+        }
+      }
+    },
+    "Die Quelle überschreitet die Verarbeitungsgrenzen des Companions." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The source exceeds the Companion's processing limits."
+          }
+        }
+      }
     },
     "Die Sprache der App kann jederzeit geändert werden. Die Änderung wird sofort übernommen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -630,25 +2273,239 @@
       }
     },
     "Die Startzuordnungen sind grobe Musikrichtungen. Du kannst das Genre eines Künstlers jederzeit ändern." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The initial assignments are broad music categories. You can change an artist's genre at any time."
+          }
+        }
+      }
+    },
+    "Die TLS-Identität des Macs konnte nicht bestätigt werden. Prüfe Adresse, Zertifikat und Fingerabdruck auf dem Mac." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Mac's TLS identity could not be verified. Check the address, certificate and fingerprint on the Mac."
+          }
+        }
+      }
+    },
+    "Die Verarbeitung wurde abgebrochen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing was cancelled."
+          }
+        }
+      }
     },
     "Die Verbindung wird im Vordergrund automatisch geprüft. Im Hintergrund startet die App keine dauerhafte Netzwerksuche." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The connection is checked automatically while the app is in the foreground. The app does not run continuous network discovery in the background."
+          }
+        }
+      }
+    },
+    "Die Vorschau konnte nicht geladen werden. Du kannst das Video direkt auf YouTube öffnen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The preview could not be loaded. You can open the video directly on YouTube."
+          }
+        }
+      }
+    },
+    "Die YouTube-Antwort konnte nicht gelesen werden. Bitte versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The YouTube response could not be read. Try again."
+          }
+        }
+      }
+    },
+    "Die Ziel-Playlist wurde gelöscht. Wähle ein neues Importziel." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The destination playlist was deleted. Choose a new import destination."
+          }
+        }
+      }
     },
     "Die Zuordnung gilt für vorhandene und künftig importierte Titel dieses Künstlers. Bei bekannten Namen wird das hinterlegte Genre vorgeschlagen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This assignment applies to existing songs and future imports by this artist. Known artists use their suggested genre."
+          }
+        }
+      }
     },
     "Dies stellt das importierte Genre wieder her. Falls keines vorhanden ist, wird die automatische Künstlerzuordnung verwendet." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restores the imported genre. If none is available, the automatic artist assignment is used."
+          }
+        }
+      }
+    },
+    "Diese Dateien haben identischen Inhalt." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These files have identical content."
+          }
+        }
+      }
+    },
+    "Dieser Titel ist nicht verfügbar." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This song is not available."
+          }
+        }
+      }
+    },
+    "Dieses Video oder diese öffentliche Playlist ist nicht verfügbar." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This video or public playlist is not available."
+          }
+        }
+      }
     },
     "Du kannst die Kopplungsdaten weiterhin manuell einfügen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can still paste the pairing details manually."
+          }
+        }
+      }
+    },
+    "Duplikate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicates"
+          }
+        }
+      }
+    },
+    "Duplikatverwaltung" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage duplicates"
+          }
+        }
+      }
+    },
+    "Ein" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        }
+      }
+    },
+    "Ein API-Schlüssel ist im Schlüsselbund gespeichert." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An API key is stored in Keychain."
+          }
+        }
+      }
+    },
+    "Ein Künstler mit diesem Namen existiert bereits." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An artist with this name already exists."
+          }
+        }
+      }
+    },
+    "Ein Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One song"
+          }
+        }
+      }
     },
     "Ein Treffer in einem ausgewählten Feld genügt. Groß- und Kleinschreibung, Akzente und Satzzeichen werden beim Vergleich vereinheitlicht." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A match in any selected field is enough. Matching ignores capitalization, accents and punctuation."
+          }
+        }
+      }
     },
     "Ein Widerruf benötigt eine Verbindung zum Mac. Beim rein lokalen Entfernen bleibt der Zugang dort aktiv und kann mit „revoke“ widerrufen werden." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking access requires a connection to your Mac. If you only remove the connection locally, access remains active on your Mac and can be revoked with “revoke”."
+          }
+        }
+      }
+    },
+    "Einmaliger Kopplungscode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-Time Pairing Code"
+          }
+        }
+      }
     },
     "Einstellungen" : {
       "extractionState" : "stale",
@@ -792,6 +2649,17 @@
         }
       }
     },
+    "Ende des aktuellen Titels" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End of Current Track"
+          }
+        }
+      }
+    },
     "Entdecken, Vorschau und eigene Musik importieren" : {
       "localizations" : {
         "en" : {
@@ -862,8 +2730,59 @@
         }
       }
     },
+    "Entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "Erlaube Offline Music den Kamerazugriff in den iPhone-Einstellungen. Auch eine Bildschirmzeit-Beschränkung kann die Kamera sperren." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Offline Music to access the camera in iPhone Settings. Screen Time restrictions can also block the camera."
+          }
+        }
+      }
+    },
+    "Erstellen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        }
+      }
+    },
+    "Exakte Duplikate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exact duplicates"
+          }
+        }
+      }
+    },
     "Falls die Verbindung blockiert ist: Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk → Offline Music einschalten. In den App-Einstellungen auch die Kamera für den QR-Code erlauben." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If the connection is blocked, go to Settings → Privacy & Security → Local Network and enable Offline Music. Also allow camera access in the app settings to scan QR codes."
+          }
+        }
+      }
     },
     "Favoriten" : {
       "extractionState" : "stale",
@@ -936,38 +2855,687 @@
         }
       }
     },
+    "Fehlgeschlagene Titel erneut versuchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry Failed Tracks"
+          }
+        }
+      }
+    },
+    "Fertig" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Fertige Aufträge jetzt abrufen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetch Ready Jobs Now"
+          }
+        }
+      }
+    },
+    "Fertige Songs automatisch importieren" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically Import Ready Songs"
+          }
+        }
+      }
+    },
+    "Fertige Songs in die Bibliothek übernehmen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Ready Songs to Library"
+          }
+        }
+      }
+    },
+    "Fingerabdruck mit der Anzeige auf meinem Mac abgeglichen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I checked that the fingerprint matches the one shown on my Mac"
+          }
+        }
+      }
+    },
+    "Fotos auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose photos"
+          }
+        }
+      }
+    },
+    "Freigegebene Mac-Dateien auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Shared Mac Files"
+          }
+        }
+      }
+    },
+    "Füge einen gültigen YouTube-Video- oder Playlist-Link ein. Andere Webseiten werden nicht als Medienquelle geöffnet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste a valid YouTube video or playlist link. Other websites cannot be opened as media sources."
+          }
+        }
+      }
+    },
     "Füge Titel über das Kontextmenü oder Bearbeiten hinzu." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add songs using the context menu or Edit."
+          }
+        }
+      }
+    },
+    "Für die offizielle Suche brauchst du einen Schlüssel für die YouTube Data API v3." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official search requires a YouTube Data API v3 key."
+          }
+        }
+      }
     },
     "Für dieses iPhone bereitgestellt" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared with This iPhone"
+          }
+        }
+      }
+    },
+    "Für jede Gruppe muss mindestens eine zugängliche Version behalten werden." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one accessible version must be kept in each group."
+          }
+        }
+      }
+    },
+    "Gefundene Künstler" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matching artists"
+          }
+        }
+      }
+    },
+    "Gekoppelter Mac" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paired Mac"
+          }
+        }
+      }
     },
     "Genre" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genre"
+          }
+        }
+      }
+    },
+    "Genre auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose genre"
+          }
+        }
+      }
     },
     "Genre auswählen oder erstellen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose or create a genre"
+          }
+        }
+      }
+    },
+    "Genre bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit genre"
+          }
+        }
+      }
+    },
+    "Genre konnte nicht gespeichert werden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save genre"
+          }
+        }
+      }
+    },
+    "Genre konnte nicht wiederhergestellt werden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not restore genre"
+          }
+        }
+      }
+    },
+    "Genre suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search genres"
+          }
+        }
+      }
+    },
+    "Genres & Künstler" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genres & artists"
+          }
+        }
+      }
+    },
+    "Genres oder Künstler suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search genres or artists"
+          }
+        }
+      }
+    },
+    "Gerätename" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Name"
+          }
+        }
+      }
+    },
+    "Geschützte Medien werden nicht unterstützt." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protected media is not supported."
+          }
+        }
+      }
+    },
+    "Gib die private IPv4-Adresse deines Macs ein, z. B. https://192.168.1.23:8765. 127.0.0.1 zeigt auf das jeweilige Gerät." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your Mac's private IPv4 address, for example https://192.168.1.23:8765. 127.0.0.1 refers to the device itself."
+          }
+        }
+      }
+    },
+    "Gib einen Suchbegriff mit höchstens 200 Zeichen ein." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a search term with no more than 200 characters."
+          }
+        }
+      }
+    },
+    "Google-Datenschutz" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Privacy Policy"
+          }
+        }
+      }
+    },
+    "Heruntergeladene Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported songs"
+          }
+        }
+      }
     },
     "Hier erscheinen deine Konvertierungsaufträge." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your conversion jobs will appear here."
+          }
+        }
+      }
+    },
+    "Hinterlege unter YouTube-Einstellungen deinen Schlüssel für die YouTube Data API v3. Einen Link kannst du auch direkt als Vorschau öffnen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your YouTube Data API v3 key in YouTube Settings. You can also open a link directly as a preview."
+          }
+        }
+      }
+    },
+    "https://192.168.1.23:8765" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://192.168.1.23:8765"
+          }
+        }
+      }
     },
     "Import starten" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Import"
+          }
+        }
+      }
+    },
+    "Import wird gestartet …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting Import …"
+          }
+        }
+      }
+    },
+    "Importauftrag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Job"
+          }
+        }
+      }
+    },
+    "Importe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imports"
+          }
+        }
+      }
     },
     "Importiere einen Musikordner, um loszulegen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import a music folder to get started."
+          }
+        }
+      }
+    },
+    "Importiere Musik, um Titel auszuwählen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import music to select songs."
+          }
+        }
+      }
+    },
+    "Importieren in" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import To"
+          }
+        }
+      }
+    },
+    "Importierte Angaben" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported information"
+          }
+        }
+      }
+    },
+    "Importiertes Genre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported genre"
+          }
+        }
+      }
+    },
+    "Importziel / Playlist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Destination / Playlist"
+          }
+        }
+      }
+    },
+    "In deiner Bibliothek" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Your Library"
+          }
+        }
+      }
+    },
+    "In Playlist speichern" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to playlist"
+          }
+        }
+      }
+    },
+    "iPhone-App-Einstellungen öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open iPhone App Settings"
+          }
+        }
+      }
+    },
+    "Kamera nicht verfügbar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera Unavailable"
+          }
+        }
+      }
+    },
+    "Kamera zum Scannen des Companion-QR-Codes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera for scanning the companion QR code"
+          }
+        }
+      }
+    },
+    "Kamerazugriff prüfen …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking Camera Access …"
+          }
+        }
+      }
     },
     "Kein Genre gefunden. Du kannst im Formular ein neues erstellen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No genres found. You can create a new one in the form."
+          }
+        }
+      }
     },
     "Kein Künstler gefunden. Eigene Namen kannst du im Formular eingeben." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No artists found. You can enter a custom name in the form."
+          }
+        }
+      }
+    },
+    "Kein Mac gefunden. Starte den Companion mit serve --bonjour oder gib die Adresse manuell ein. Prüfe auch den lokalen Netzwerkzugriff in den iOS-Einstellungen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Mac found. Start the Companion using serve --bonjour or enter the address manually. Also check local network access in iOS Settings."
+          }
+        }
+      }
+    },
+    "Keine Duplikate gefunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No duplicates found"
+          }
+        }
+      }
+    },
+    "Keine Ergebnisse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results"
+          }
+        }
+      }
+    },
+    "Keine Netzwerkverbindung. Prüfe dein Netzwerk und versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No network connection. Check your network and try again."
+          }
+        }
+      }
+    },
+    "Keine passenden Titel gefunden." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching songs found."
+          }
+        }
+      }
+    },
+    "Kommende Titel entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove upcoming songs"
+          }
+        }
+      }
+    },
+    "Kommender Titel: %@, %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upcoming song: %@, %@"
+          }
+        }
+      }
+    },
+    "Konvertieren" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converting"
+          }
+        }
+      }
     },
     "Konvertierung auf deinem Mac. Titel, Künstler, Cover und vorhandene Metadaten werden übernommen." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversion takes place on your Mac. Titles, artists, artwork, and existing metadata are preserved."
+          }
+        }
+      }
     },
     "Kopplungsdaten einfügen" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste Pairing Details"
+          }
+        }
+      }
+    },
+    "Kopplungsdaten übernehmen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Pairing Details"
+          }
+        }
+      }
+    },
+    "Kopplungsdaten vom Mac als JSON" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac pairing details as JSON"
+          }
+        }
+      }
     },
     "Künstler" : {
       "localizations" : {
@@ -1039,8 +3607,257 @@
         }
       }
     },
+    "Künstler auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose artist"
+          }
+        }
+      }
+    },
+    "Künstler bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit artist"
+          }
+        }
+      }
+    },
+    "Künstler hinzufügen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add artist"
+          }
+        }
+      }
+    },
+    "Künstler oder Titel suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search artists or songs"
+          }
+        }
+      }
+    },
+    "Künstler suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search artists"
+          }
+        }
+      }
+    },
+    "Künstlername" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist name"
+          }
+        }
+      }
+    },
+    "Künstlerzuordnung bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit artist assignment"
+          }
+        }
+      }
+    },
+    "Laden abbrechen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Loading"
+          }
+        }
+      }
+    },
+    "Lautstärke" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
+          }
+        }
+      }
+    },
+    "Leeren" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "Link einfügen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste Link"
+          }
+        }
+      }
+    },
+    "Link öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Link"
+          }
+        }
+      }
+    },
+    "Live / ohne Dauer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live / no duration"
+          }
+        }
+      }
+    },
+    "Löschen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "Löschen: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete: %@"
+          }
+        }
+      }
+    },
+    "Lückenarme Wiedergabe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gapless Playback"
+          }
+        }
+      }
+    },
     "Mac finden" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find Your Mac"
+          }
+        }
+      }
+    },
+    "Mac im Heimnetz suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find Mac on Home Network"
+          }
+        }
+      }
+    },
+    "Mac koppeln / QR-Code scannen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair Mac / Scan QR Code"
+          }
+        }
+      }
+    },
+    "Mac nicht erreichbar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac unreachable"
+          }
+        }
+      }
+    },
+    "Mac nicht erreichbar. Prüfe WLAN, lokalen Netzwerkzugriff und ob der Companion auf dem Mac läuft." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac unreachable. Check Wi-Fi, local network access and whether the Companion is running on the Mac."
+          }
+        }
+      }
+    },
+    "Mac suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find Mac"
+          }
+        }
+      }
+    },
+    "Mac verbinden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect Mac"
+          }
+        }
+      }
     },
     "Mac-Verbindung" : {
       "localizations" : {
@@ -1112,29 +3929,525 @@
         }
       }
     },
+    "Mac-Verbindung entfernen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Mac Connection?"
+          }
+        }
+      }
+    },
+    "Mac-Verbindung verwalten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Mac Connection"
+          }
+        }
+      }
+    },
     "Mac: Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk. Beide Geräte müssen im gleichen erreichbaren WLAN sein." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On Mac, go to System Settings → Privacy & Security → Local Network. Both devices must be on the same Wi-Fi network and able to reach each other."
+          }
+        }
+      }
+    },
+    "Manuell für diesen Titel gesetzt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manually assigned to this song"
+          }
+        }
+      }
+    },
+    "Manuelle Mac-Adresse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual Mac address"
+          }
+        }
+      }
+    },
+    "Markierte Duplikate löschen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete selected duplicates?"
+          }
+        }
+      }
+    },
+    "Markierte löschen (%@)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete selected (%@)"
+          }
+        }
+      }
+    },
+    "Markierte löschen (%lld)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete selected (%lld)"
+          }
+        }
+      }
+    },
+    "Meistgespielt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most played"
+          }
+        }
+      }
     },
     "Mindestens eine zugängliche Version jeder Gruppe bleibt erhalten." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one accessible version in each group will be kept."
+          }
+        }
+      }
+    },
+    "Mit diesem Mac verbinden?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to This Mac?"
+          }
+        }
+      }
+    },
+    "Mögliche Dublette erhalten. Du kannst die Versionen unter Bibliothek → Duplikate prüfen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A possible duplicate was kept. You can compare versions under Library → Duplicates."
+          }
+        }
+      }
+    },
+    "Mögliche Duplikate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Possible duplicates"
+          }
+        }
+      }
+    },
+    "MP3-Qualität" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP3 Quality"
+          }
+        }
+      }
+    },
+    "Musik entdecken" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover Music"
+          }
+        }
+      }
+    },
+    "Musik importieren" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Music"
+          }
+        }
+      }
     },
     "Musik vom Mac" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music from Mac"
+          }
+        }
+      }
+    },
+    "Musikdatei" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio file"
+          }
+        }
+      }
     },
     "Musikdateien werden geprüft …" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking music files …"
+          }
+        }
+      }
+    },
+    "Musikimport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music Import"
+          }
+        }
+      }
+    },
+    "Musikkatalog konnte nicht geladen werden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load music catalog"
+          }
+        }
+      }
+    },
+    "Nächster Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next song"
+          }
+        }
+      }
+    },
+    "Nächstes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "Name der Playlist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist name"
+          }
+        }
+      }
     },
     "Namen und Schreibweisen suchen in" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match names and alternate spellings in"
+          }
+        }
+      }
+    },
+    "Netzwerkzugriff erlauben" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Network Access"
+          }
+        }
+      }
     },
     "Neue Playlist" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New playlist"
+          }
+        }
+      }
+    },
+    "Neue Playlist mit Auswahl erstellen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create playlist from selection"
+          }
+        }
+      }
+    },
+    "Nicht ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not selected"
+          }
+        }
+      }
+    },
+    "Nicht eingerichtet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not configured"
+          }
+        }
+      }
+    },
+    "Nicht genug freier Speicherplatz. Gib Speicher frei und versuche den Import erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not enough free storage. Free up space and try importing again."
+          }
+        }
+      }
+    },
+    "Nicht verarbeitet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not processed"
+          }
+        }
+      }
+    },
+    "Nicht verfügbar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable"
+          }
+        }
+      }
+    },
+    "Nicht vorhanden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Nicht zugeordnet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned"
+          }
+        }
+      }
+    },
+    "Noch keine freigegebenen Dateien" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Shared Files Yet"
+          }
+        }
+      }
     },
     "Noch keine normale Playlist vorhanden." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No regular playlists yet."
+          }
+        }
+      }
+    },
+    "Noch keine Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No songs yet"
+          }
+        }
+      }
+    },
+    "Noch nicht zugeordnete Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned songs"
+          }
+        }
+      }
+    },
+    "Noch nie gespielt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never played"
+          }
+        }
+      }
+    },
+    "Nur auf diesem iPhone entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Only from This iPhone"
+          }
+        }
+      }
     },
     "Nur Bibliothek" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library Only"
+          }
+        }
+      }
+    },
+    "Oder eigenes Genre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or enter a custom genre"
+          }
+        }
+      }
+    },
+    "Oder neues Genre erstellen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or create a new genre"
+          }
+        }
+      }
+    },
+    "Öffentliche Playlists" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public playlists"
+          }
+        }
+      }
+    },
+    "Öffentliche Playlists suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Public Playlists"
+          }
+        }
+      }
+    },
+    "Offizielle Suche einrichten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Up Official Search"
+          }
+        }
+      }
     },
     "Offline hören, ganz ohne Ablenkung." : {
       "localizations" : {
@@ -1202,6 +4515,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "离线聆听，专注无干扰。"
+          }
+        }
+      }
+    },
+    "Ohne Genre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No genre"
+          }
+        }
+      }
+    },
+    "Ohne Zuordnung" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }
@@ -1348,14 +4694,167 @@
         }
       }
     },
+    "Originalgenre wiederherstellen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore original genre"
+          }
+        }
+      }
+    },
     "Passende importierte Songs erscheinen hier automatisch." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matching imported songs appear here automatically."
+          }
+        }
+      }
     },
     "Passende Titel erscheinen hier automatisch." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matching songs appear here automatically."
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Pause: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause: %@"
+          }
+        }
+      }
+    },
+    "Player öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open player"
+          }
+        }
+      }
+    },
+    "Playlist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist"
+          }
+        }
+      }
+    },
+    "Playlist bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit playlist"
+          }
+        }
+      }
+    },
+    "Playlist erstellen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create playlist"
+          }
+        }
+      }
+    },
+    "Playlist für diese Songgruppe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist for This Song Group"
+          }
+        }
+      }
+    },
+    "Playlist ist leer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This playlist is empty"
+          }
+        }
+      }
+    },
+    "Playlist nicht mehr vorhanden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist no longer available"
+          }
+        }
+      }
     },
     "Playlist pro Songgruppe" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist per Song Group"
+          }
+        }
+      }
+    },
+    "Playlist und Cover bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit playlist and artwork"
+          }
+        }
+      }
+    },
+    "Playlist: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist: %@"
+          }
+        }
+      }
     },
     "Playlists" : {
       "extractionState" : "stale",
@@ -1428,20 +4927,333 @@
         }
       }
     },
+    "Playlists löschen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete playlists?"
+          }
+        }
+      }
+    },
+    "Playlists oder Künstler suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search playlists or artists"
+          }
+        }
+      }
+    },
+    "Pro Auftrag sind bis zu 1.000 bereitgestellte Dateien möglich." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each job can contain up to 1,000 shared files."
+          }
+        }
+      }
+    },
+    "QR-Code am Mac scannen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR Code on Mac"
+          }
+        }
+      }
+    },
+    "QR-Code scannen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR Code"
+          }
+        }
+      }
+    },
+    "QR-Scannen wird auf diesem Gerät nicht unterstützt. Im Simulator steht keine Kamera zur Verfügung." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QR scanning is not supported on this device. The simulator has no camera."
+          }
+        }
+      }
+    },
+    "Quelle prüfen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking source"
+          }
+        }
+      }
+    },
+    "Sanft ausblenden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade Out Gently"
+          }
+        }
+      }
+    },
     "Scanne den QR-Code im Terminal deines Macs." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan the QR code in Terminal on your Mac."
+          }
+        }
+      }
     },
     "Scanne die Bibliothek erneut, wenn du neue Musik importiert hast." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan the library again after importing more music."
+          }
+        }
+      }
+    },
+    "Scannen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan"
+          }
+        }
+      }
+    },
+    "Schließen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Schlüssel entfernen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Key"
+          }
+        }
+      }
+    },
+    "SHA-256-Fingerabdruck vom Mac" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHA-256 Fingerprint from Mac"
+          }
+        }
+      }
     },
     "SHA-256: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHA-256: %@"
+          }
+        }
+      }
+    },
+    "Sicher koppeln" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair Securely"
+          }
+        }
+      }
+    },
+    "Sicher speichern" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Securely"
+          }
+        }
+      }
     },
     "Sichere Erstkopplung" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secure Initial Pairing"
+          }
+        }
+      }
+    },
+    "Sleep Timer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep-Timer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep timer"
+          }
+        }
+      }
+    },
+    "Smart Playlist · %@ Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist · %@ songs"
+          }
+        }
+      }
+    },
+    "Smart Playlist · %lld Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Smart Playlist · %lld Titel"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Smart Playlist · %lld Titel"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Smart playlist · %lld song"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Smart playlist · %lld songs"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Smart Playlist · automatisch" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist · automatic"
+          }
+        }
+      }
+    },
+    "Smart Playlists" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlists"
+          }
+        }
+      }
+    },
+    "Song öffnen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Song"
+          }
+        }
+      }
+    },
+    "Song-Cover auswählen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose song artwork"
+          }
+        }
+      }
+    },
+    "Speichern" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "Speichern fehlgeschlagen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save"
+          }
+        }
+      }
     },
     "Sprache" : {
       "extractionState" : "stale",
@@ -1586,13 +5398,45 @@
       }
     },
     "Starte den Companion im Terminal mit „serve --bonjour“. Scanne den dort angezeigten QR-Code, um dich direkt zu verbinden. Beide Geräte müssen im selben erreichbaren Heimnetz sein." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start the companion in Terminal with “serve --bonjour”. Scan the QR code shown there to connect directly. Both devices must be on the same home network and able to reach each other."
+          }
+        }
+      }
     },
     "Stelle eigene oder entsprechend autorisierte Audiodateien auf dem Mac mit „add-file --device …“ für dieses iPhone bereit." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On your Mac, use “add-file --device …” to share audio files you own or are authorized to use with this iPhone."
+          }
+        }
+      }
     },
     "Stoppt nach dem aktuellen Titel" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stops After the Current Track"
+          }
+        }
+      }
+    },
+    "Stoppt nach diesem Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stops after this song"
+          }
+        }
+      }
     },
     "Suche" : {
       "extractionState" : "stale",
@@ -1661,6 +5505,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索"
+          }
+        }
+      }
+    },
+    "Suche beenden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Searching"
+          }
+        }
+      }
+    },
+    "Suche nach Videos oder öffentlichen Playlists oder füge einen YouTube-Link ein." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search for videos or public playlists, or paste a YouTube link."
+          }
+        }
+      }
+    },
+    "System" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System default"
+          }
+        }
+      }
+    },
+    "Timer abbrechen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Timer"
           }
         }
       }
@@ -1735,8 +5623,485 @@
         }
       }
     },
+    "Titel · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs · %@"
+          }
+        }
+      }
+    },
+    "Titel · %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs · %lld"
+          }
+        }
+      }
+    },
+    "Titel anzeigen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Tracks"
+          }
+        }
+      }
+    },
+    "Titel aus Playlist entfernen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove songs from playlist?"
+          }
+        }
+      }
+    },
+    "Titel auswählen · %@ ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select songs · %@ selected"
+          }
+        }
+      }
+    },
+    "Titel auswählen · %lld ausgewählt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Titel auswählen · %lld ausgewählt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Titel auswählen · %lld ausgewählt"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Select song · %lld selected"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Select songs · %lld selected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Titel in ursprünglicher Reihenfolge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracks in Original Order"
+          }
+        }
+      }
+    },
+    "Titel wiederholen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat"
+          }
+        }
+      }
+    },
+    "Titel, Künstler oder Album suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search songs, artists or albums"
+          }
+        }
+      }
+    },
+    "Titel, Künstler, Album oder Genre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs, artists, albums or genres"
+          }
+        }
+      }
+    },
+    "Umbenennen / Bearbeiten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename / edit"
+          }
+        }
+      }
+    },
+    "Unbekannter Künstler" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Artist"
+          }
+        }
+      }
+    },
+    "Unbekanntes Album" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Album"
+          }
+        }
+      }
+    },
+    "Ungültige Kopplungsdaten. Erzeuge sie auf dem Mac erneut mit pair --name." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid pairing data. Generate it again on the Mac using pair --name."
+          }
+        }
+      }
+    },
+    "Verarbeitung auf dem Mac abbrechen?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Processing on Mac?"
+          }
+        }
+      }
+    },
+    "Verbinden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        }
+      }
+    },
+    "Verbindung" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection"
+          }
+        }
+      }
+    },
+    "Verbindung entfernen …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Connection …"
+          }
+        }
+      }
+    },
+    "Verbindung fehlgeschlagen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection failed"
+          }
+        }
+      }
+    },
+    "Verbindung prüfen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking connection"
+          }
+        }
+      }
+    },
+    "Verbleibend" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remaining"
+          }
+        }
+      }
+    },
+    "Verbunden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected"
+          }
+        }
+      }
+    },
+    "Versuche einen anderen Suchbegriff oder einen öffentlichen YouTube-Link." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another search term or a public YouTube link."
+          }
+        }
+      }
+    },
     "Verwende nur Kopplungsdaten direkt von deinem Mac. 127.0.0.1 funktioniert nicht zwischen iPhone und Mac. Der dauerhafte Zugang wird ausschließlich im iOS-Schlüsselbund gespeichert." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only use pairing details obtained directly from your Mac. 127.0.0.1 does not work between an iPhone and a Mac. Persistent credentials are stored exclusively in the iOS Keychain."
+          }
+        }
+      }
+    },
+    "Videos auf YouTube suchen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search YouTube Videos"
+          }
+        }
+      }
+    },
+    "Vorheriger Titel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous song"
+          }
+        }
+      }
+    },
+    "Vorheriges" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        }
+      }
+    },
+    "Vorschau" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        }
+      }
+    },
+    "Vorschau %@ von %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview %@ of %@"
+          }
+        }
+      }
+    },
+    "Vorschau %lld von %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview %lld of %lld"
+          }
+        }
+      }
+    },
+    "Vorschau: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview: %@"
+          }
+        }
+      }
+    },
+    "Warteschlange" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queue"
+          }
+        }
+      }
+    },
+    "Warteschlange leeren?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear the queue?"
+          }
+        }
+      }
+    },
+    "Wartet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting"
+          }
+        }
+      }
+    },
+    "Weitere Aufträge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Jobs"
+          }
+        }
+      }
+    },
+    "Weitere Dateien laden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load More Files"
+          }
+        }
+      }
+    },
+    "Weitere Ergebnisse laden" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load More Results"
+          }
+        }
+      }
+    },
+    "Weitere Schreibweisen, mit Komma trennen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternate spellings, separated by commas"
+          }
+        }
+      }
+    },
+    "Weitere Titel anzeigen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show More Tracks"
+          }
+        }
+      }
+    },
+    "Widerruf nicht bestätigt. Der lokale Zugang bleibt für einen erneuten Versuch gespeichert. " : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revocation was not confirmed. Local credentials are kept so you can try again. "
+          }
+        }
+      }
+    },
+    "Widerruf nicht bestätigt. Der lokale Zugang bleibt für einen erneuten Versuch gespeichert. %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revocation was not confirmed. Local credentials are kept so you can try again. %@"
+          }
+        }
+      }
     },
     "Wiedergabe" : {
       "extractionState" : "stale",
@@ -1805,6 +6170,105 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在播放"
+          }
+        }
+      }
+    },
+    "Wiedergabe stoppen nach" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Playback After"
+          }
+        }
+      }
+    },
+    "Wiedergabeeinstellungen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playback settings"
+          }
+        }
+      }
+    },
+    "Wiedergabeposition" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playback position"
+          }
+        }
+      }
+    },
+    "Wird behalten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeping this version"
+          }
+        }
+      }
+    },
+    "Wird wiedergegeben: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now playing: %@"
+          }
+        }
+      }
+    },
+    "YouTube" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube"
+          }
+        }
+      }
+    },
+    "YouTube · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube · %@"
+          }
+        }
+      }
+    },
+    "YouTube · Playlist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube · Playlist"
+          }
+        }
+      }
+    },
+    "YouTube · Video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube · Video"
           }
         }
       }
@@ -1879,8 +6343,246 @@
         }
       }
     },
+    "YouTube entdecken" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover YouTube"
+          }
+        }
+      }
+    },
+    "YouTube hat den API-Schlüssel abgelehnt. Prüfe Schlüssel, API-Aktivierung und Einschränkungen in der Google Cloud Console." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube rejected the API key. Check the key, API activation and restrictions in the Google Cloud Console."
+          }
+        }
+      }
+    },
+    "YouTube ist nicht erreichbar. Prüfe deine Internetverbindung und versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube is unreachable. Check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "YouTube laden …" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading YouTube …"
+          }
+        }
+      }
+    },
+    "YouTube-API-Schlüssel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube API Key"
+          }
+        }
+      }
+    },
+    "YouTube-Einstellungen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube Settings"
+          }
+        }
+      }
+    },
+    "YouTube-Link" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube link"
+          }
+        }
+      }
+    },
+    "YouTube-Link einfügen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste YouTube Link"
+          }
+        }
+      }
+    },
+    "YouTube-Nutzungsbedingungen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube Terms of Service"
+          }
+        }
+      }
+    },
+    "YouTube-Playlist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube playlist"
+          }
+        }
+      }
+    },
     "YouTube-Suche und Vorschau. Für einen Offline-Import wähle unter Importe deine freigegebenen Mac-Dateien." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search and preview on YouTube. To import music for offline playback, select your shared Mac files under Imports."
+          }
+        }
+      }
+    },
+    "YouTube-Video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube video"
+          }
+        }
+      }
+    },
+    "YouTube-Videos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube videos"
+          }
+        }
+      }
+    },
+    "Ziel für neue Aufträge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination for New Jobs"
+          }
+        }
+      }
+    },
+    "Zu bestehender Playlist hinzufügen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to existing playlist"
+          }
+        }
+      }
+    },
+    "Zu Favoriten" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to favorites"
+          }
+        }
+      }
+    },
+    "Zu viele Anfragen. Bitte warte kurz und versuche es erneut." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many requests. Wait a moment and try again."
+          }
+        }
+      }
+    },
+    "Zufallswiedergabe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle"
+          }
+        }
+      }
+    },
+    "Zuletzt geprüft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Checked"
+          }
+        }
+      }
+    },
+    "Zuletzt gespielt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently played"
+          }
+        }
+      }
+    },
+    "Zuletzt hinzugefügt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently added"
+          }
+        }
+      }
+    },
+    "Zurück zu den Ergebnissen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to Results"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

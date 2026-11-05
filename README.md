@@ -36,6 +36,11 @@ available in the supported app languages:
 - Optional official YouTube search and preview using the user's own API key
 - Optional local Mac Companion for authorized files and automatic import
 - App language selection from Settings
+- Shared dark design system with a fresh green accent and native glass on iOS 26
+- Complete German and English UI, including plurals, errors and accessibility labels;
+  the existing additional language translations remain partial
+
+Design details, changed files and verification limits: [UI_DESIGN.md](UI_DESIGN.md).
 
 ## Requirements
 
@@ -103,6 +108,7 @@ python3 Tests/run_mac_connection_tests.py
 python3 Tests/run_mac_import_tests.py
 python3 Tests/run_youtube_tests.py
 python3 Tests/run_swift_regressions.py
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/check_localization.py
 ```
 
 An Xcode build requires a full Xcode installation, not only the Command Line

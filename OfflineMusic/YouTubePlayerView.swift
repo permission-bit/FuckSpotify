@@ -5,6 +5,7 @@ struct YouTubePreview: View {
     let entries: [YouTubeEntry]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var player: AudioPlayer
     @State private var index = 0
     @State private var webError: String?
@@ -12,34 +13,42 @@ struct YouTubePreview: View {
         NavigationStack {
             ScrollView {
                 if let entry = entries.indices.contains(index) ? entries[index] : nil {
-                    VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 24) {
                         Label("YouTube", systemImage: "play.rectangle.fill").font(.headline)
                         if entry.available && entry.embeddable {
                             YouTubeWebPlayer(entry: entry, onError: { webError = $0 })
                                 .frame(minHeight: 230).aspectRatio(16 / 9, contentMode: .fit)
                                 .id(entry.id)
                         }
-                        Text(entry.title).font(.title3.bold())
-                        Text(entry.channel).foregroundStyle(.secondary)
-                        if let webError { Text(webError).font(.footnote).foregroundStyle(.secondary) }
+                        Text(entry.title).font(.title3.bold()).fixedSize(horizontal: false, vertical: true)
+                        Text(entry.channel).foregroundStyle(AppTheme.secondaryText)
+                        if let webError { Text(L10n.text(webError)).font(.footnote).foregroundStyle(AppTheme.secondaryText) }
                         Link("Auf YouTube öffnen", destination: entry.publicURL)
+                            .frame(minHeight: 44, alignment: .leading)
                         if entries.count > 1 {
-                            HStack {
-                                Button("Vorheriges", systemImage: "backward.end") { index -= 1; webError = nil }.disabled(index == 0)
+                            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+                            layout {
+                                Button { index -= 1; webError = nil } label: {
+                                    Label("Vorheriges", systemImage: "backward.end").frame(minHeight: 44)
+                                }.disabled(index == 0)
                                 Spacer()
                                 Text("\(index + 1) / \(entries.count)").font(.caption).monospacedDigit()
+                                    .accessibilityLabel(Text("Vorschau \(index + 1) von \(entries.count)"))
                                 Spacer()
-                                Button("Nächstes", systemImage: "forward.end") { index += 1; webError = nil }.disabled(index + 1 == entries.count)
+                                Button { index += 1; webError = nil } label: {
+                                    Label("Nächstes", systemImage: "forward.end").frame(minHeight: 44)
+                                }.disabled(index + 1 == entries.count)
                             }
                         }
-                    }.padding()
+                    }.padding(24).musicGlass().padding(16)
                 }
             }
+            .musicScreen()
             .navigationTitle("Vorschau").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
             .onAppear { if player.isPlaying { player.toggle() } }
             .onChange(of: scenePhase) { _, phase in if phase == .background { dismiss() } }
-        }
+        }.musicScreen()
     }
 }
 

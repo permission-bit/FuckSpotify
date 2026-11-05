@@ -69,8 +69,12 @@ struct SongGenreEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 Section("Aktives Genre") {
-                    Text(activeGenreName).font(.headline)
+                    Group {
+                        if activeGenreName.isEmpty { Text("Nicht zugeordnet") }
+                        else { Text(activeGenreName) }
+                    }.font(.headline)
                     if song.genreOverrideID != nil { Label("Manuell für diesen Titel gesetzt", systemImage: "slider.horizontal.3") }
                 }
                 Section("Genre auswählen") {
@@ -82,20 +86,28 @@ struct SongGenreEditorView: View {
                     TextField("Oder eigenes Genre", text: $customGenre)
                 }
                 Section("Importierte Angaben") {
-                    LabeledContent("Importiertes Genre", value: song.importedGenre.isEmpty ? "Nicht vorhanden" : song.importedGenre)
-                    LabeledContent("Automatische Zuordnung", value: inferredGenreNames.isEmpty ? "Nicht vorhanden" : inferredGenreNames)
+                    LabeledContent("Importiertes Genre") {
+                        if song.importedGenre.isEmpty { Text("Nicht vorhanden") }
+                        else { Text(song.importedGenre) }
+                    }
+                    LabeledContent("Automatische Zuordnung") {
+                        if inferredGenreNames.isEmpty { Text("Nicht vorhanden") }
+                        else { Text(inferredGenreNames) }
+                    }
                 }
                 if song.genreOverrideID != nil {
                     Section {
                         Button("Originalgenre wiederherstellen", systemImage: "arrow.uturn.backward") {
                             do { try SongGenreStore.restore(song, context: context); dismiss() }
-                            catch { errorMessage = error.localizedDescription }
+                            catch { errorMessage = L10n.error(error) }
                         }
                     } footer: {
                         Text("Dies stellt das importierte Genre wieder her. Falls keines vorhanden ist, wird die automatische Künstlerzuordnung verwendet.")
                     }
                 }
+                }.listRowBackground(AppTheme.surface)
             }
+            .musicScreen()
             .navigationTitle("Genre bearbeiten")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -107,18 +119,18 @@ struct SongGenreEditorView: View {
             }
             .alert("Genre konnte nicht gespeichert werden", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") { errorMessage = nil }
-            } message: { Text(errorMessage ?? "") }
+            } message: { Text(L10n.text(errorMessage ?? "")) }
             .task {
                 do {
                     try await SongGenreStore.loadOriginal(song, context: context)
                     selectedGenreID = song.genreOverrideID ?? song.genreIDs.first
-                } catch { errorMessage = error.localizedDescription }
+                } catch { errorMessage = L10n.error(error) }
                 loadingOriginal = false
             }
-        }
+        }.musicScreen()
     }
 
-    private var activeGenreName: String { genreNames(for: song.genreIDs).joined(separator: ", ").isEmpty ? "Nicht zugeordnet" : genreNames(for: song.genreIDs).joined(separator: ", ") }
+    private var activeGenreName: String { genreNames(for: song.genreIDs).joined(separator: ", ") }
     private var inferredGenreNames: String { genreNames(for: song.inferredGenreIDs).joined(separator: ", ") }
     private func genreNames(for ids: [UUID]) -> [String] { genres.filter { ids.contains($0.id) }.map(\.name) }
 
@@ -130,7 +142,7 @@ struct SongGenreEditorView: View {
                 try SongGenreStore.apply(song, genreName: genre.name, context: context)
             }
             dismiss()
-        } catch { errorMessage = error.localizedDescription }
+        } catch { errorMessage = L10n.error(error) }
     }
 }
 
@@ -303,6 +315,7 @@ enum DuplicateScanner {
 struct DuplicateManagerView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var player: AudioPlayer
     @Query(sort: \Song.title) private var songs: [Song]
     @State private var groups: [DuplicateGroup] = []
@@ -317,7 +330,8 @@ struct DuplicateManagerView: View {
         NavigationStack {
             List {
                 if isScanning {
-                    Section { HStack { ProgressView(); Text("Musikdateien werden geprüft …") } }
+                    Section { HStack(spacing: 12) { ProgressView(); Text("Musikdateien werden geprüft …") } }
+                        .listRowBackground(AppTheme.surface)
                 } else if groups.isEmpty {
                     ContentUnavailableView("Keine Duplikate gefunden", systemImage: "checkmark.circle", description: Text("Scanne die Bibliothek erneut, wenn du neue Musik importiert hast."))
                 } else {
@@ -325,18 +339,20 @@ struct DuplicateManagerView: View {
                         Section {
                             ForEach(group.records) { record in
                                 duplicateRow(record, in: group)
-                                    .listRowBackground(player.current?.id == record.id ? Color.green.opacity(0.1) : Color(.secondarySystemGroupedBackground))
+                                    .listRowBackground(player.current?.id == record.id ? AppTheme.accent.opacity(0.12) : AppTheme.surface)
                             }
                         } header: {
                             VStack(alignment: .leading, spacing: 3) {
-                                Label(group.kind.title, systemImage: group.kind == .exact ? "checkmark.seal" : "questionmark.circle")
-                                Text(group.kind.detail).font(.caption).textCase(nil)
+                                Label { Text(LocalizedStringKey(group.kind.title)) } icon: { Image(systemName: group.kind == .exact ? "checkmark.seal" : "questionmark.circle") }
+                                Text(LocalizedStringKey(group.kind.detail)).font(.caption).textCase(nil)
+                                    .foregroundStyle(AppTheme.secondaryText)
                             }
                         }
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .musicScreen()
             .navigationTitle("Duplikate")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Fertig") { dismiss() } }
@@ -351,39 +367,52 @@ struct DuplicateManagerView: View {
             } message: { Text("Mindestens eine zugängliche Version jeder Gruppe bleibt erhalten.") }
             .alert("Duplikatverwaltung", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("OK") { message = nil }
-            } message: { Text(message ?? "") }
+            } message: { Text(L10n.text(message ?? "")) }
             .task { scan() }
             .onDisappear { scanTask?.cancel() }
             .onChange(of: songs.count) { _, _ in scan() }
-        }
+        }.musicScreen()
     }
 
     @ViewBuilder
     private func duplicateRow(_ record: DuplicateSongRecord, in group: DuplicateGroup) -> some View {
         let keepID = keepIDs[group.id] ?? group.records.first?.id
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(record.title).font(.body.weight(.medium)).lineLimit(1)
-                    Text("\(record.artist) · \(record.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    Text(record.fileName).font(.caption2).foregroundStyle(.secondary).lineLimit(2).textSelection(.enabled)
-                    Text("\(durationText(record.duration)) · \(fileSizeText(record.fileSize)) · \(record.fileFormat.isEmpty ? "Audio" : record.fileFormat)")
-                        .font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(record.title).font(.body.weight(.medium)).lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    Text("\(MetadataText.artist(record.artist)) · \(MetadataText.album(record.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    Text(record.fileName).font(.caption2).foregroundStyle(AppTheme.secondaryText).lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2).textSelection(.enabled)
+                    Text("\(durationText(record.duration)) · \(fileSizeText(record.fileSize)) · \(record.fileFormat.isEmpty ? L10n.text("Audio") : record.fileFormat)")
+                        .font(.caption2).foregroundStyle(AppTheme.secondaryText)
                 }
                 Spacer()
-                Button(player.current?.id == record.id && player.isPlaying ? "Pause" : "Vorschau", systemImage: player.current?.id == record.id && player.isPlaying ? "pause.fill" : "play.fill") { preview(record) }
+                Button { preview(record) } label: {
+                    Label {
+                        Text(LocalizedStringKey(player.current?.id == record.id && player.isPlaying ? "Pause" : "Vorschau"))
+                    } icon: { Image(systemName: player.current?.id == record.id && player.isPlaying ? "pause.fill" : "play.fill") }
+                        .frame(minWidth: 44, minHeight: 44)
+                }
                     .labelStyle(.iconOnly)
                     .buttonStyle(.borderless)
                     .disabled(!record.isAvailable)
+                    .accessibilityLabel(player.current?.id == record.id && player.isPlaying ? Text("Pause: \(record.title)") : Text("Vorschau: \(record.title)"))
             }
-            HStack {
-                Button(record.id == keepID ? "Wird behalten" : "Behalten") {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
+                Button {
                     keepIDs[group.id] = record.id
                     removalIDs.remove(record.id)
+                } label: {
+                    Text(LocalizedStringKey(record.id == keepID ? "Wird behalten" : "Behalten"))
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.bordered)
-                .tint(record.id == keepID ? Color(red: 0.20, green: 0.60, blue: 0.42) : .secondary)
-                Spacer()
+                .tint(record.id == keepID ? AppTheme.accent : AppTheme.secondaryText)
+                .accessibilityLabel(Text("Behalten: \(record.title)"))
+                .accessibilityValue(Text(LocalizedStringKey(record.id == keepID ? "Wird behalten" : "Nicht ausgewählt")))
+                .accessibilityAddTraits(record.id == keepID ? .isSelected : [])
+                if !dynamicTypeSize.isAccessibilitySize { Spacer() }
                 Toggle("Löschen", isOn: Binding(
                     get: { removalIDs.contains(record.id) },
                     set: { marked in
@@ -391,9 +420,12 @@ struct DuplicateManagerView: View {
                         else { removalIDs.remove(record.id) }
                     }
                 ))
+                .frame(minHeight: 44)
+                .accessibilityLabel(Text("Löschen: \(record.title)"))
                 .disabled(keepIDs.values.contains(record.id))
             }
         }
+        .padding(.vertical, 8)
         .opacity(record.isAvailable ? 1 : 0.5)
     }
 
@@ -431,7 +463,7 @@ struct DuplicateManagerView: View {
             let count = try DuplicateLibraryStore.delete(groups: groups, removalIDs: safeIDs, keepIDs: keepIDs, context: context, player: player)
             if blockedGroups > 0 { message = "\(count) Dateien gelöscht. Einige Auswahlen wurden zum Schutz der letzten Version übersprungen." }
             scan()
-        } catch { message = error.localizedDescription }
+        } catch { message = L10n.error(error) }
     }
 
     private func durationText(_ duration: Double) -> String {
