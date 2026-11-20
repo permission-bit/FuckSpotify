@@ -7,14 +7,23 @@ import PhotosUI
 
 private let appTint = AppTheme.accent
 
+private extension EnvironmentValues {
+    @Entry var songRowPlaylists: [Playlist] = []
+}
+
+@MainActor private final class MacStores: ObservableObject {
+    let connection = MacConnectionStore()
+    let imports = MacImportCoordinator()
+}
+
 struct RootView: View {
-    @StateObject private var macConnection = MacConnectionStore()
-    @StateObject private var macImports = MacImportCoordinator()
+    @StateObject private var mac = MacStores()
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var context
     @State private var catalogError: String?
     @State private var showingNowPlaying = false
     @Query(sort: \Song.title) private var songs: [Song]
+    @Query(filter: #Predicate<Playlist> { $0.artistName == "" }, sort: \Playlist.name) private var songRowPlaylists: [Playlist]
     @EnvironmentObject private var player: AudioPlayer
     var body: some View {
         TabView {
@@ -38,25 +47,26 @@ struct RootView: View {
         }
         .musicScreen()
         .tint(appTint)
-        .environmentObject(macConnection)
-        .environmentObject(macImports)
+        .environmentObject(mac.connection)
+        .environmentObject(mac.imports)
+        .environment(\.songRowPlaylists, songRowPlaylists)
         .sheet(isPresented: $showingNowPlaying) {
             NowPlayingView().musicScreen()
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
-            if phase == .active { macConnection.setActive(true); macImports.setActive(true) }
-            else if phase == .background { macImports.setActive(false); macConnection.setActive(false) }
+            if phase == .active { mac.connection.setActive(true); mac.imports.setActive(true) }
+            else if phase == .background { mac.imports.setActive(false); mac.connection.setActive(false) }
         }
-        .onChange(of: macConnection.status, initial: true) { _, status in
-            macImports.setConnection(status == .connected ? macConnection.transferCredentials() : nil)
+        .onReceive(mac.connection.$status.removeDuplicates()) { status in
+            mac.imports.setConnection(status == .connected ? mac.connection.transferCredentials() : nil)
         }
         .onAppear { player.attachHistoryContext(context); player.setLibrary(songs) }.onChange(of: songs.map(\.id)) { _, _ in player.setLibrary(songs) }
         .task {
             do {
                 try DuplicateLibraryStore.recover(in: context)
                 try await Importer.recoverInterruptedImports(context: context)
-                try MusicCatalog.seed(in: context)
-                macImports.attach(context.container)
+                try await CatalogUpdates.write(in: context) { try MusicCatalog.seed(in: $0) }
+                mac.imports.attach(context.container)
             }
             catch { catalogError = L10n.error(error) }
         }
@@ -67,13 +77,13 @@ struct RootView: View {
 }
 
 struct HomeView: View {
-    @EnvironmentObject private var macConnection: MacConnectionStore
     @State private var showingMacConnection = false
     @State private var showingAppSettings = false
     @Query(sort: \Song.addedAt, order: .reverse) private var songs: [Song]
     @Environment(\.modelContext) private var context
     @State private var showImporter = false; @State private var importingFolder = false
     var body: some View {
+        let favorites = Array(songs.lazy.filter(\.isFavorite).prefix(5))
         NavigationStack {
             List {
                 VStack(alignment: .leading, spacing: 6) {
@@ -101,9 +111,9 @@ struct HomeView: View {
                     Section {
                         ForEach(songs.prefix(8)) { SongRow(song: $0) }
                     } header: { Label("Zuletzt hinzugefügt", systemImage: "clock") }
-                    if !songs.filter(\.isFavorite).isEmpty {
+                    if !favorites.isEmpty {
                         Section {
-                            ForEach(songs.filter(\.isFavorite).prefix(5)) { SongRow(song: $0) }
+                            ForEach(favorites) { SongRow(song: $0) }
                         } header: { Label("Favoriten", systemImage: "heart.fill") }
                     }
                 }
@@ -114,8 +124,7 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Mac-Verbindung", systemImage: "desktopcomputer") { showingMacConnection = true }
-                        .accessibilityValue(Text(LocalizedStringKey(macConnection.status.title)))
+                    MacConnectionButton { showingMacConnection = true }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Einstellungen", systemImage: "gearshape") { showingAppSettings = true }
@@ -133,6 +142,16 @@ struct HomeView: View {
                 }
             }
         }
+    }
+}
+
+private struct MacConnectionButton: View {
+    @EnvironmentObject private var connection: MacConnectionStore
+    let action: () -> Void
+
+    var body: some View {
+        Button("Mac-Verbindung", systemImage: "desktopcomputer", action: action)
+            .accessibilityValue(Text(LocalizedStringKey(connection.status.title)))
     }
 }
 
@@ -247,11 +266,12 @@ struct SearchView: View {
     @State private var query = ""
 
     var body: some View {
+        let results = filtered
         NavigationStack {
-            List(filtered) { SongRow(song: $0) }
+            List(results) { SongRow(song: $0) }
                 .listStyle(.insetGrouped)
                 .overlay {
-                    if filtered.isEmpty {
+                    if results.isEmpty {
                         ContentUnavailableView.search(text: query)
                     }
                 }
@@ -287,6 +307,8 @@ struct PlaylistsView: View {
     @State private var showingDeleteConfirmation = false
 
     var body: some View {
+        let visiblePlaylists = filteredPlaylists
+        let songsByID = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
         NavigationStack(path: $path) {
             List(selection: $selectedIDs) {
                 Section {
@@ -295,10 +317,10 @@ struct PlaylistsView: View {
                     }
                 }
                 Section("Deine Playlists") {
-                    ForEach(filteredPlaylists) { playlist in
+                    ForEach(visiblePlaylists) { playlist in
                         NavigationLink(value: Route.playlist(playlist.id)) {
                             HStack(spacing: 12) {
-                                PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist))
+                                PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist, songsByID: songsByID))
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(playlist.name)
                                     if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(AppTheme.secondaryText) }
@@ -313,8 +335,7 @@ struct PlaylistsView: View {
                         }
                     }
                     .onDelete { indexes in
-                        let visible = filteredPlaylists
-                        indexes.forEach { context.delete(visible[$0]) }
+                        indexes.forEach { context.delete(visiblePlaylists[$0]) }
                     }
                 }
                 Section("Smart Playlists") {
@@ -361,9 +382,9 @@ struct PlaylistsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if editMode.isEditing {
-                        Button(LocalizedStringKey(selectedIDs.count == filteredPlaylists.count ? "Auswahl aufheben" : "Alle auswählen")) {
-                            if selectedIDs.count == filteredPlaylists.count { selectedIDs.removeAll() }
-                            else { selectedIDs = Set(filteredPlaylists.map(\.id)) }
+                        Button(LocalizedStringKey(selectedIDs.count == visiblePlaylists.count ? "Auswahl aufheben" : "Alle auswählen")) {
+                            if selectedIDs.count == visiblePlaylists.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(visiblePlaylists.map(\.id)) }
                         }
                     } else { EditButton() }
                 }
@@ -397,8 +418,12 @@ struct PlaylistsView: View {
         }
     }
 
-    private func artworkData(for playlist: Playlist) -> Data? {
-        MusicCatalog.tracks(in: playlist, songs: songs, artists: artists).compactMap(\.artworkData).first
+    private func artworkData(for playlist: Playlist, songsByID: [UUID: Song]) -> Data? {
+        if playlist.artistName.isEmpty {
+            return playlist.songIDs.lazy.compactMap { songsByID[$0]?.artworkData }.first
+        }
+        let matchesArtist = MusicCatalog.artistTrackMatcher(for: playlist.artistName, artists: artists)
+        return songs.first { matchesArtist($0) && $0.artworkData != nil }?.artworkData
     }
 
 }
@@ -589,13 +614,15 @@ struct PlaylistDetail: View {
     init(playlist: Playlist) { self.playlist = playlist; _songs = Query() }
 
     var body: some View {
+        let isArtistPlaylist = !playlist.artistName.isEmpty
+        let displayedSongs = MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
         List(selection: $selectedIDs) {
             Section {
                 HStack(spacing: 16) {
-                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.compactMap(\.artworkData).first, size: 112)
+                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.lazy.compactMap(\.artworkData).first, size: 112)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(playlist.name).font(.title3.bold())
-                        Text(L10n.count("%lld Titel", playlist.artistName.isEmpty ? regularSongs.count : artistSongs.count))
+                        Text(L10n.count("%lld Titel", displayedSongs.count))
                             .foregroundStyle(AppTheme.secondaryText)
                     }
                     Spacer()
@@ -610,38 +637,38 @@ struct PlaylistDetail: View {
                 .disabled(displayedSongs.isEmpty)
             }
             .listRowBackground(Color.clear)
-            if !playlist.artistName.isEmpty {
-                Section { ForEach(artistSongs) { SongRow(song: $0, playbackCollection: artistSongs) } } header: {
+            if isArtistPlaylist {
+                Section { ForEach(displayedSongs) { SongRow(song: $0, playbackCollection: displayedSongs) } } header: {
                     Label("Alle Titel von \(playlist.artistName)", systemImage: "person.crop.circle")
                 }
-            } else if regularSongs.isEmpty {
+            } else if displayedSongs.isEmpty {
                 ContentUnavailableView("Playlist ist leer", systemImage: "music.note.list", description: Text("Füge Titel über das Kontextmenü oder Bearbeiten hinzu."))
             } else {
-                Section("Titel · \(regularSongs.count)") {
-                    ForEach(regularSongs) { song in
-                        PlaylistSongRow(song: song, remove: { remove(song) }, onPlay: { player.play(song, in: regularSongs) })
+                Section("Titel · \(displayedSongs.count)") {
+                    ForEach(displayedSongs) { song in
+                        PlaylistSongRow(song: song, remove: { remove(song) }, onPlay: { player.play(song, in: displayedSongs) })
                         .tag(song.id)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button("Entfernen", systemImage: "minus.circle", role: .destructive) { remove(song) }
                         }
                     }
-                    .onMove(perform: move)
-                    .onDelete(perform: remove)
+                    .onMove { move(from: $0, to: $1, songs: displayedSongs) }
+                    .onDelete { remove(at: $0, songs: displayedSongs) }
                 }
             }
         }
         .listStyle(.insetGrouped)
         .environment(\.editMode, $editMode)
-        .animation(.easeInOut(duration: 0.2), value: regularSongs.map(\.id))
+        .animation(.easeInOut(duration: 0.2), value: isArtistPlaylist ? [] : displayedSongs.map(\.id))
         .musicScreen()
         .navigationTitle(playlist.name)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                if playlist.artistName.isEmpty, !regularSongs.isEmpty {
+                if !isArtistPlaylist, !displayedSongs.isEmpty {
                     if editMode.isEditing {
-                        Button(LocalizedStringKey(selectedIDs.count == regularSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
-                            if selectedIDs.count == regularSongs.count { selectedIDs.removeAll() }
-                            else { selectedIDs = Set(regularSongs.map(\.id)) }
+                        Button(LocalizedStringKey(selectedIDs.count == displayedSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
+                            if selectedIDs.count == displayedSongs.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(displayedSongs.map(\.id)) }
                         }
                     } else { EditButton() }
                 }
@@ -678,21 +705,12 @@ struct PlaylistDetail: View {
         } message: { Text("Die Audiodateien bleiben in deiner Bibliothek erhalten.") }
     }
 
-    private var regularSongs: [Song] {
-        let lookup = Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
-        return playlist.songIDs.compactMap { lookup[$0] }
-    }
-    private var artistSongs: [Song] {
-        MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
-    }
     private var artistProfile: ArtistProfile? {
         guard !playlist.artistName.isEmpty else { return nil }
-        return artists.first { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(playlist.artistName) }
+        return MusicCatalog.artistProfile(named: playlist.artistName, in: artists)
     }
-    private var displayedSongs: [Song] { playlist.artistName.isEmpty ? regularSongs : artistSongs }
-
-    private func move(from offsets: IndexSet, to destination: Int) {
-        var visibleIDs = regularSongs.map(\.id)
+    private func move(from offsets: IndexSet, to destination: Int, songs: [Song]) {
+        var visibleIDs = songs.map(\.id)
         visibleIDs.move(fromOffsets: offsets, toOffset: destination)
         playlist.reorderSongs(visibleIDs)
         try? context.save()
@@ -704,8 +722,8 @@ struct PlaylistDetail: View {
         try? context.save()
     }
 
-    private func remove(at offsets: IndexSet) {
-        let ids = Set(offsets.map { regularSongs[$0].id })
+    private func remove(at offsets: IndexSet, songs: [Song]) {
+        let ids = Set(offsets.map { songs[$0].id })
         playlist.removeSongs(ids)
         try? context.save()
     }
@@ -746,8 +764,8 @@ struct PlaylistArtwork: View {
     let data: Data?
     let size: CGFloat
 
-    init(playlist: Playlist, fallbackData: Data? = nil, size: CGFloat = 56) {
-        self.data = playlist.coverData ?? fallbackData
+    init(playlist: Playlist, fallbackData: @autoclosure () -> Data? = nil, size: CGFloat = 56) {
+        self.data = playlist.coverData ?? fallbackData()
         self.size = size
     }
 
@@ -759,18 +777,7 @@ struct CoverImage: View {
     let size: CGFloat
 
     var body: some View {
-        Group {
-            if let data, let image = UIImage(data: data) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: size * 0.38, weight: .medium))
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-        }
-        .frame(width: size, height: size)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: size * 0.18, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.18, style: .continuous))
+        Artwork(data: data, size: size, isPlaylistCover: true)
     }
 }
 
@@ -857,7 +864,7 @@ struct SongRow: View {
     var playbackCollection: [Song]? = nil
     @EnvironmentObject private var player: AudioPlayer
     @Environment(\.modelContext) private var context
-    @Query(sort: \Playlist.name) private var playlists: [Playlist]
+    @Environment(\.songRowPlaylists) private var playlists
     @State private var showingGenreEditor = false
     @State private var genreError: String?
     var body: some View {
@@ -902,9 +909,9 @@ struct SongRow: View {
             }
             Button("Als Nächstes abspielen", systemImage: "text.line.first.and.arrowtriangle.forward") { player.playNext(song) }
             Button("An Warteschlange anhängen", systemImage: "text.badge.plus") { player.addToQueue(song) }
-            if !playlists.filter({ $0.artistName.isEmpty }).isEmpty {
+            if !playlists.isEmpty {
                 Menu("In Playlist speichern", systemImage: "plus.rectangle.on.folder") {
-                    ForEach(playlists.filter { $0.artistName.isEmpty }) { playlist in
+                    ForEach(playlists) { playlist in
                         Button(playlist.name) { if !playlist.songIDs.contains(song.id) { playlist.songIDs.append(song.id) } }
                     }
                 }
@@ -941,27 +948,31 @@ struct TrackSwipeActions: ViewModifier {
 struct Artwork: View {
     let data: Data?
     var size: CGFloat = 48
+    var isPlaylistCover = false
     @State private var thumbnail: UIImage?
     @Environment(\.displayScale) private var displayScale
     private struct Request: Hashable { let data: Data?; let pixels: Int }
 
     var body: some View {
+        let cornerRadius = isPlaylistCover ? size * 0.18 : min(22, size * 10 / 48)
+        let pixels = max(1, Int(size * displayScale))
         Group {
             if let image = thumbnail {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
-                Image(systemName: "music.note")
-                    .font(.system(size: size * 0.45))
+                Image(systemName: isPlaylistCover ? "music.note.list" : "music.note")
+                    .font(.system(size: size * (isPlaylistCover ? 0.38 : 0.45), weight: isPlaylistCover ? .medium : .regular))
                     .foregroundStyle(AppTheme.secondaryText)
             }
         }
         .frame(width: size, height: size)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
-        .clipShape(RoundedRectangle(cornerRadius: min(22, size * 10 / 48)))
-        .task(id: Request(data: data, pixels: max(1, Int(size * displayScale)))) {
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .task(id: Request(data: data, pixels: pixels), priority: .utility) {
+            guard !Task.isCancelled else { return }
             thumbnail = nil
             guard let data else { return }
-            let image = await ArtworkThumbnails.image(data, pixels: max(1, Int(size * displayScale)))
+            let image = await ArtworkThumbnails.shared.image(data, pixels: pixels)
             guard !Task.isCancelled else { return }
             thumbnail = image
         }
@@ -974,16 +985,7 @@ struct MiniPlayer: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(.primary.opacity(0.10))
-                    Rectangle()
-                        .fill(appTint.opacity(0.9))
-                        .frame(width: proxy.size.width * min(max(player.progress, 0), 1))
-                }
-            }
-            .frame(height: 2)
-            .padding(.horizontal, 14)
+            MiniPlayerProgress(position: player.position)
 
             HStack(spacing: 10) {
                 Button(action: onOpen) {
@@ -1025,6 +1027,23 @@ struct MiniPlayer: View {
     }
 }
 
+private struct MiniPlayerProgress: View {
+    @ObservedObject var position: AudioPlayer.Position
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Rectangle().fill(.primary.opacity(0.10))
+                Rectangle()
+                    .fill(appTint.opacity(0.9))
+                    .frame(width: proxy.size.width * position.fraction)
+            }
+        }
+        .frame(height: 2)
+        .padding(.horizontal, 14)
+    }
+}
+
 struct NowPlayingView: View {
     @EnvironmentObject private var player: AudioPlayer
     @Environment(\.dismiss) private var dismiss
@@ -1046,24 +1065,33 @@ struct NowPlayingView: View {
                             .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
                         .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(player.current?.title ?? "").font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
-                            Text(MetadataText.artist(player.current?.artist ?? "")).foregroundStyle(AppTheme.secondaryText)
+                        if let song = player.current {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(song.title).font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
+                                    Text(MetadataText.artist(song.artist)).foregroundStyle(AppTheme.secondaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contextMenu {
+                                    Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
+                                }
+                                Button { song.isFavorite.toggle() } label: {
+                                    Image(systemName: song.isFavorite ? "heart.fill" : "heart")
+                                        .font(.title2)
+                                        .foregroundStyle(song.isFavorite ? appTint : AppTheme.secondaryText)
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(LocalizedStringKey(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten"))
+                                .accessibilityAddTraits(song.isFavorite ? .isSelected : [])
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contextMenu {
-                            Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
+                        let songID = player.current?.id
+                        PlaybackPositionControl(position: player.position, duration: player.current?.duration ?? 0) { value in
+                            if player.current?.id == songID { player.seek(value) }
                         }
-                        Slider(value: Binding(get: { player.progress }, set: player.seek))
-                            .accessibilityLabel("Wiedergabeposition")
-                            .accessibilityValue(time(player.progress * (player.current?.duration ?? 0)))
-                        HStack {
-                            Text(time(player.progress * (player.current?.duration ?? 0)))
-                            Spacer()
-                            Text(time(player.current?.duration ?? 0))
-                        }
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.secondaryText)
+                        .id(songID)
                         controls
                         HStack(spacing: 12) {
                             Image(systemName: "speaker.fill").accessibilityHidden(true)
@@ -1098,6 +1126,12 @@ struct NowPlayingView: View {
                         .buttonStyle(.borderless)
                     }
                     .padding(.vertical, 18)
+                    .background {
+                        NowPlayingSwipes(isEnabled: !editMode.isEditing && player.current != nil,
+                                         onDismiss: { dismiss() },
+                                         onPrevious: { player.previous(restartCurrent: false) },
+                                         onNext: { player.next() })
+                    }
                 }
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.visible)
@@ -1204,8 +1238,132 @@ struct NowPlayingView: View {
         .buttonStyle(.plain)
     }
 
+}
+
+private struct NowPlayingSwipes: UIViewRepresentable {
+    var isEnabled: Bool
+    let onDismiss: () -> Void
+    let onPrevious: () -> Void
+    let onNext: () -> Void
+
+    func makeUIView(context: Context) -> Surface {
+        let view = Surface()
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ view: Surface, context: Context) {
+        view.pan.isEnabled = isEnabled
+        view.onDismiss = onDismiss
+        view.onPrevious = onPrevious
+        view.onNext = onNext
+    }
+
+    static func dismantleUIView(_ view: Surface, coordinator: ()) {
+        view.pan.view?.removeGestureRecognizer(view.pan)
+    }
+
+    final class Surface: UIView, UIGestureRecognizerDelegate {
+        private enum Direction { case horizontal, down }
+        private var direction: Direction?
+        private var startsInPlayer = false
+        private var startsAtTop = false
+        var onDismiss: (() -> Void)?
+        var onPrevious: (() -> Void)?
+        var onNext: (() -> Void)?
+
+        lazy var pan: UIPanGestureRecognizer = {
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+            pan.delegate = self
+            pan.maximumNumberOfTouches = 1
+            return pan
+        }()
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            pan.view?.removeGestureRecognizer(pan)
+            guard window != nil else { return }
+            // The list handles scrolling and queue-row swipes alongside this recognizer.
+            let list = sequence(first: self as UIView, next: { $0.superview })
+                .compactMap { $0 as? UIScrollView }.first
+            list?.addGestureRecognizer(pan)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard let list = gestureRecognizer.view as? UIScrollView, let touchedView = touch.view else { return false }
+            let touchedSlider = sequence(first: touchedView, next: { $0.superview }).contains { $0 is UISlider }
+            guard !touchedSlider else { return false }
+            startsInPlayer = bounds.contains(touch.location(in: self))
+            startsAtTop = list.contentOffset.y <= -list.adjustedContentInset.top + 2
+            return startsInPlayer || startsAtTop
+        }
+
+        override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            let velocity = pan.velocity(in: self)
+            if startsInPlayer, abs(velocity.x) > 1.25 * abs(velocity.y) {
+                direction = .horizontal
+            } else if startsAtTop, velocity.y > 1.25 * abs(velocity.x) {
+                direction = .down
+            } else {
+                direction = nil
+            }
+            return direction != nil
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            other === (gestureRecognizer.view as? UIScrollView)?.panGestureRecognizer
+        }
+
+        @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
+            guard pan.state == .ended else { return }
+            let distance = pan.translation(in: self)
+            switch direction {
+            case .horizontal where abs(distance.x) >= 55 && abs(distance.x) > abs(distance.y):
+                if distance.x > 0 { onPrevious?() } else { onNext?() }
+            case .down where distance.y >= 65 && distance.y > abs(distance.x):
+                onDismiss?()
+            default:
+                break
+            }
+        }
+    }
+}
+
+private struct PlaybackPositionControl: View {
+    @ObservedObject var position: AudioPlayer.Position
+    let duration: TimeInterval
+    let seek: (Double) -> Void
+    @State private var scrubbedPosition: Double?
+
+    var body: some View {
+        let elapsed = time((scrubbedPosition ?? position.fraction) * duration)
+        VStack(spacing: 20) {
+            Slider(value: Binding(get: { scrubbedPosition ?? position.fraction }, set: { value in
+                if scrubbedPosition != nil { scrubbedPosition = value }
+                else { seek(value) }
+            }), onEditingChanged: { editing in
+                if editing {
+                    scrubbedPosition = position.fraction
+                } else if let value = scrubbedPosition {
+                    seek(value)
+                    scrubbedPosition = nil
+                }
+            })
+            .accessibilityLabel("Wiedergabeposition")
+            .accessibilityValue(elapsed)
+            HStack {
+                Text(elapsed)
+                Spacer()
+                Text(time(duration))
+            }
+            .font(.caption)
+            .foregroundStyle(AppTheme.secondaryText)
+        }
+    }
+
     private func time(_ seconds: Double) -> String {
-        "\(Int(seconds) / 60):\(String(format: "%02d", Int(seconds) % 60))"
+        let wholeSeconds = Int(exactly: seconds.rounded(.towardZero)) ?? 0
+        return "\(wholeSeconds / 60):\(String(format: "%02d", wholeSeconds % 60))"
     }
 }
 
@@ -1240,10 +1398,18 @@ struct QueueTrackRow: View {
 enum Importer {
     static func importFiles(_ result: Result<[URL], Error>, context: ModelContext) async {
         guard case .success(let urls) = result else { return }
+        var pendingSaves = 0
         for source in urls {
             let accessed = source.startAccessingSecurityScopedResource()
             defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-            _ = try? await stageAndImport(source, context: context)
+            _ = try? await stageAndImport(source, context: context, saveImmediately: false)
+            pendingSaves += 1
+            // Keep recovery bounded without saving the database for every track.
+            if pendingSaves >= 25 {
+                try? context.save()
+                pendingSaves = 0
+            }
         }
+        if pendingSaves > 0 { try? context.save() }
     }
 }

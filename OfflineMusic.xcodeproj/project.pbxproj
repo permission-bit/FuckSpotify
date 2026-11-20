@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1A00000000000000000000C2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C3; };
-		1A00000000000000000000C0 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C1; };
 		1A0000000000000000000030 /* OfflineMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000020 /* OfflineMusicApp.swift */; };
 		1A0000000000000000000031 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* Views.swift */; };
 		1A0000000000000000000033 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000024 /* Assets.xcassets */; };
@@ -37,11 +35,11 @@
 		1A0000000000000000000097 /* MacJobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000A7 /* MacJobDetailView.swift */; };
 		1A00000000000000000000B0 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000B1 /* Localization.swift */; };
 		1A00000000000000000000B2 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000B3 /* Localizable.xcstrings */; };
+		1A00000000000000000000C0 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C1 /* AppTheme.swift */; };
+		1A00000000000000000000C2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C3 /* InfoPlist.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1A00000000000000000000C3 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
-		1A00000000000000000000C1 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		1A0000000000000000000007 /* OfflineMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = OfflineMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000020 /* OfflineMusicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMusicApp.swift; sourceTree = "<group>"; };
 		1A0000000000000000000021 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
@@ -72,6 +70,8 @@
 		1A00000000000000000000A7 /* MacJobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacJobDetailView.swift; sourceTree = "<group>"; };
 		1A00000000000000000000B1 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		1A00000000000000000000B3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		1A00000000000000000000C1 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		1A00000000000000000000C3 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */

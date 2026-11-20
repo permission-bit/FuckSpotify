@@ -108,20 +108,20 @@ struct MacImportSummary: Identifiable {
             let cursor = settings.cursors[scope] ?? 0
             let page = try await api.deliveries(credentials, after: cursor)
             try check(generation)
-            do { try MacImportLibrary.accept(page, scope: scope, target: target, context: context, requestedTargets: settings.requestedTargets ?? [:]) }
-            catch { context.rollback(); throw error }
+            if !page.deliveries.isEmpty {
+                do { try MacImportLibrary.accept(page, scope: scope, target: target, context: context, requestedTargets: settings.requestedTargets ?? [:]) }
+                catch { context.rollback(); throw error }
+            }
             var updated = settings; updated.cursors[scope] = page.next_after
             for delivery in page.deliveries {
                 if let id = delivery.job.request_id { updated.requestedTargets?.removeValue(forKey: id.uuidString) }
             }
-            try journal.save(updated); settings = updated
+            if cursor != page.next_after || updated.requestedTargets != settings.requestedTargets {
+                try journal.save(updated); settings = updated
+            }
             if !page.has_more { break }
         }
-        let songs = try context.fetch(FetchDescriptor<Song>())
-        let lookup = MacDuplicateLookup(inputs: songs.map { song in
-            DuplicateSongInput(id: song.id, title: song.title, artist: song.artist, album: song.album, duration: song.duration,
-                fileName: song.fileName, path: LibraryStore.musicURL.appendingPathComponent(song.fileName).path)
-        })
+        var duplicateLookup: MacDuplicateLookup?
         let batches = try context.fetch(FetchDescriptor<MacImportBatch>(predicate: #Predicate { $0.scope == scope }, sortBy: [SortDescriptor(\.updatedAt)]))
         for batch in batches {
             try check(generation)
@@ -132,6 +132,9 @@ struct MacImportSummary: Identifiable {
             }
             let batchKey = batch.key
             let receipts = try context.fetch(FetchDescriptor<MacImportedFile>(predicate: #Predicate { $0.batchKey == batchKey && $0.state == "pending" }, sortBy: [SortDescriptor(\.position)]))
+            guard !receipts.isEmpty else { continue }
+            let lookup = try duplicateLookup ?? makeDuplicateLookup(in: context)
+            duplicateLookup = lookup
             for receipt in receipts {
                 try check(generation)
                 do { try await importFile(receipt, batch: batch, credentials: credentials, lookup: lookup, generation: generation) }
@@ -150,6 +153,15 @@ struct MacImportSummary: Identifiable {
                 }
             }
         }
+    }
+
+    private func makeDuplicateLookup(in context: ModelContext) throws -> MacDuplicateLookup {
+        let songs = try context.fetch(FetchDescriptor<Song>())
+        let musicURL = LibraryStore.musicURL
+        return MacDuplicateLookup(inputs: songs.map { song in
+            DuplicateSongInput(id: song.id, title: song.title, artist: song.artist, album: song.album, duration: song.duration,
+                fileName: song.fileName, path: musicURL.appendingPathComponent(song.fileName).path)
+        })
     }
 
     private func importFile(_ receipt: MacImportedFile, batch: MacImportBatch, credentials: MacCredentials,

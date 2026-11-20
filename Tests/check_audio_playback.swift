@@ -15,8 +15,7 @@ func replace(_ start: String, through end: String, with replacement: String) {
 }
 // Replace only platform integration boundaries; all queue, transition, sleep,
 // interruption and persistence control code below runs unchanged.
-replace("    private func configureSession()", through: "    @discardableResult\n    private func prepare", with: "    private func configureSession() {}")
-replace("    private func updateNowPlaying()", through: "    private func restoreSessionIfPossible()", with: "    private func updateNowPlaying() {}")
+replace("    private func configureSession(", through: "    @discardableResult\n    private func prepare", with: "    private func configureSession(activate: Bool = false) {}")
 replace("    private func configureRemoteCommands()", through: "    private func resumeFromRemote()", with: "    private func configureRemoteCommands() {}")
 let doubles = #"""
 enum LibraryStore {
@@ -45,7 +44,22 @@ enum AVAudioSession {
 @MainActor final class MPNowPlayingInfoCenter {
     static let shared = MPNowPlayingInfoCenter()
     static func `default`() -> MPNowPlayingInfoCenter { shared }
-    var nowPlayingInfo: [String: Any]?
+    private(set) var updates = 0
+    var nowPlayingInfo: [String: Any]? { didSet { updates += 1 } }
+}
+let MPMediaItemPropertyTitle = "title"
+let MPMediaItemPropertyArtist = "artist"
+let MPMediaItemPropertyAlbumTitle = "album"
+let MPMediaItemPropertyArtwork = "artwork"
+let MPMediaItemPropertyPlaybackDuration = "duration"
+let MPNowPlayingInfoPropertyElapsedPlaybackTime = "elapsed"
+let MPNowPlayingInfoPropertyPlaybackRate = "rate"
+struct UIImage {
+    init?(data: Data) {}
+    let size = CGSize(width: 32, height: 32)
+}
+final class MPMediaItemArtwork {
+    init(boundsSize: CGSize, requestHandler: (CGSize) -> UIImage) {}
 }
 @MainActor protocol AVAudioPlayerDelegate: AnyObject {}
 struct TestFormat { var sampleRate = 44100.0; var channelCount = 2 }
@@ -107,6 +121,8 @@ extension AudioPlayer {
     func finish() { if let audio { audioPlayerDidFinishPlaying(audio, successfully: true) } }
     func deadline(in seconds: Double) { sleepDeadline = Date().addingTimeInterval(seconds); armSleepTimer(); refreshScheduledTransition() }
     func activate() { becameActive() }
+    func background() { enteredBackground() }
+    var sampleInterval: TimeInterval? { timer.flatMap { $0.isValid ? $0.timeInterval : nil } }
     func interrupt(began: Bool, resume: Bool = true) {
         interrupted(Notification(name: AVAudioSession.interruptionNotification, userInfo: [AVAudioSessionInterruptionTypeKey: UInt(began ? 1 : 0), AVAudioSessionInterruptionOptionKey: UInt(resume ? 1 : 0)]))
     }
@@ -126,13 +142,41 @@ MainActor.assumeIsolated {
     }
     do {
         let p = AudioPlayer.testPlayer(); defer { p.dispose() }
+        let song = Song(title: "Progress test", duration: 100, fileName: "a.wav", artworkData: Data([1]))
+        let center = MPNowPlayingInfoCenter.default()
+        p.setLibrary([song]); p.play(song)
+        var playerUpdates = 0
+        let observer = p.objectWillChange.sink { playerUpdates += 1 }
+        defer { observer.cancel() }
+        let initialUpdates = center.updates
+        let artwork = center.nowPlayingInfo?[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork
+        precondition(artwork != nil && p.sampleInterval == 0.5)
+        p.drive(to: 5)
+        precondition(p.position.fraction == 0.05 && playerUpdates == 0 && center.updates == initialUpdates)
+        p.background(); p.drive(to: 8)
+        precondition(p.sampleInterval == 2 && p.position.fraction == 0.05 && center.updates == initialUpdates)
+        p.activate()
+        precondition(p.sampleInterval == 0.5 && p.position.fraction == 0.08)
+        p.seek(0.9)
+        precondition(center.nowPlayingInfo?[MPNowPlayingInfoPropertyElapsedPlaybackTime] as? Double == 90)
+        precondition(center.nowPlayingInfo?[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork === artwork)
+        p.cycleRepeatMode(); p.drive(to: 20)
+        precondition(center.nowPlayingInfo?[MPNowPlayingInfoPropertyElapsedPlaybackTime] as? Double == 2)
+        p.toggle()
+        precondition(p.sampleInterval == nil && center.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Int == 0)
+    }
+    do {
+        let p = AudioPlayer.testPlayer(); defer { p.dispose() }
         p.setLibrary(songs); p.play(songs[0])
         precondition(p.plannedID == songs[1].id && p.plannedTime == 100 && p.plannedOverlap == 0)
         let outgoing = p.testAudio!
         p.drive(to: 100)
         precondition(p.current?.id == songs[1].id && !outgoing.active && p.plannedID == songs[2].id)
         p.next(); precondition(p.current?.id == songs[2].id)
-        p.previous(); precondition(p.current?.id == songs[1].id)
+        p.seek(0.35)
+        p.previous(); precondition(p.current?.id == songs[2].id && p.testAudio?.currentTime == 0)
+        p.seek(0.35)
+        p.previous(restartCurrent: false); precondition(p.current?.id == songs[1].id)
         p.toggle(); precondition(!p.isPlaying && p.plannedID == nil)
         p.toggle(); precondition(p.isPlaying && p.plannedID == songs[2].id)
     }

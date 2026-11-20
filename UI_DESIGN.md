@@ -159,8 +159,8 @@ Native Liquid Glass is availability-gated to iOS 26. The mini player uses the
 native tab accessory there, with a safe-area material inset on older systems.
 Reduce Transparency uses solid custom surfaces; Reduce Motion disables optional
 UI animations. Artwork thumbnails are downsampled off the main thread with a
-bounded cache. The player volume control uses the system `MPVolumeView`; its
-route-button suppression currently produces a deprecation warning but builds.
+bounded cache. The player uses the system `MPVolumeView` for volume control and
+shows the system route button when an additional audio output is available.
 
 ## Changed production files
 

@@ -68,6 +68,7 @@ enum MacConnectionStatus: Equatable {
     private let api: any MacCompanionNetworking
     private let monitorsNetwork: Bool
     private var monitor: NWPathMonitor?
+    private var networkAvailable: Bool?
     private var task: Task<Void, Never>?
     private var generation = UUID()
     private var foreground = false
@@ -89,44 +90,59 @@ enum MacConnectionStatus: Equatable {
         } else {
             cancelWork()
             monitor?.cancel(); monitor = nil
+            networkAvailable = nil
             if status == .checking { status = isConfigured ? .unreachable : .notConfigured }
         }
     }
     private func startMonitoring() {
         guard monitorsNetwork, monitor == nil, foreground else { return }
         let monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self, self.foreground, !self.isBusy else { return }
-                self.reconnect()
+        monitor.pathUpdateHandler = { [weak self, weak monitor] path in
+            let available = path.status != .unsatisfied
+            Task { @MainActor [weak self, weak monitor] in
+                guard let self, let monitor, self.monitor === monitor, self.foreground else { return }
+                let hadPath = self.networkAvailable != nil
+                self.networkAvailable = available
+                guard !self.isBusy else { return }
+                if available {
+                    // The initial path notification can arrive during the first health request.
+                    if hadPath || self.task == nil { self.reconnect() }
+                } else {
+                    self.cancelWork()
+                    if self.status != .unreachable { self.status = .unreachable }
+                }
             }
         }
         monitor.start(queue: DispatchQueue(label: "OfflineMusic.mac-network"))
         self.monitor = monitor
     }
     func reconnect() {
-        guard let credentials, foreground, !isBusy else { return }
+        guard let credentials, foreground, !isBusy, networkAvailable != false else { return }
         cancelWork()
+        if status != .connected && status != .checking { status = .checking }
         let generation = generation
         task = Task { [weak self] in
             guard let self else { return }
             var delay: UInt64 = 2
             while !Task.isCancelled && self.foreground && self.generation == generation {
-                if self.status != .connected { self.status = .checking }
                 do {
                     try await self.api.health(credentials)
                     guard !Task.isCancelled, self.generation == generation else { return }
-                    self.status = .connected; self.message = nil; self.lastChecked = .now
+                    if self.status != .connected { self.status = .connected }
+                    if self.message != nil { self.message = nil }
+                    self.lastChecked = .now
                     delay = 2
                     try await Task.sleep(nanoseconds: 60_000_000_000)
                 } catch {
                     guard !Task.isCancelled, self.generation == generation else { return }
-                    self.message = error.localizedDescription
+                    let message = error.localizedDescription
+                    if self.message != message { self.message = message }
                     let issue = error as? MacConnectionError
-                    self.status = issue == .unavailable ? .unreachable : .failed
+                    let status: MacConnectionStatus = issue == .unavailable ? .unreachable : .failed
+                    if self.status != status { self.status = status }
                     if issue == .identity || issue == .unauthorized || issue == .invalidResponse { return }
                     do { try await Task.sleep(nanoseconds: delay * 1_000_000_000) } catch { return }
-                    delay = min(60, delay * 2)
+                    delay = min(300, delay * 4)
                 }
             }
         }
@@ -164,6 +180,7 @@ enum MacConnectionStatus: Equatable {
         do { try keychain.remove(); credentials = nil; updateSummary(); status = .notConfigured; message = nil; lastChecked = nil }
         catch { status = .failed; message = error.localizedDescription }
         monitor?.cancel(); monitor = nil
+        networkAvailable = nil
     }
     func revokeAndRemove() {
         guard let credentials, !isBusy else { return }
@@ -183,7 +200,12 @@ enum MacConnectionStatus: Equatable {
             }
         }
     }
-    private func cancelWork() { generation = UUID(); task?.cancel(); task = nil; isBusy = false }
+    private func cancelWork() {
+        generation = UUID()
+        task?.cancel()
+        task = nil
+        if isBusy { isBusy = false }
+    }
     private func updateSummary() {
         serverAddress = credentials?.endpoint.url.absoluteString; deviceName = credentials?.name
         certificateFingerprint = credentials?.fingerprint

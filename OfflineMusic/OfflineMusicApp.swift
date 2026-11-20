@@ -144,10 +144,14 @@ struct PlaybackSession: Codable, Equatable {
 }
 
 @MainActor final class AudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
+    @MainActor final class Position: ObservableObject {
+        @Published fileprivate(set) var fraction = 0.0
+    }
+
     static let shared = AudioPlayer()
+    let position = Position()
     @Published private(set) var current: Song?
     @Published private(set) var isPlaying = false
-    @Published var progress = 0.0
     @Published private(set) var shuffle = false
     @Published private(set) var repeatMode = 0
     @Published private(set) var queue: [Song] = []
@@ -178,6 +182,7 @@ struct PlaybackSession: Codable, Equatable {
     private var currentIndex = 0
     private var audio: AVAudioPlayer?
     private var timer: Timer?
+    private var isInBackground = false
     private var pendingSession: PlaybackSession?
     private var didAttemptSessionRestore = false
     private var sessionSaveWorkItem: DispatchWorkItem?
@@ -209,11 +214,11 @@ struct PlaybackSession: Codable, Equatable {
         configureRemoteCommands()
         observe(AVAudioSession.routeChangeNotification) { $0.routeChanged($1) }
         observe(UIApplication.willResignActiveNotification) { owner, _ in owner.saveForAppTransition() }
-        observe(UIApplication.didEnterBackgroundNotification) { owner, _ in owner.saveForAppTransition() }
+        observe(UIApplication.didEnterBackgroundNotification) { owner, _ in owner.enteredBackground() }
         observe(UIApplication.didBecomeActiveNotification) { owner, _ in owner.becameActive() }
         observe(AVAudioSession.interruptionNotification) { $0.interrupted($1) }
         observe(AVAudioSession.mediaServicesWereResetNotification) { owner, _ in owner.mediaServicesReset() }
-        observe(.NSSystemClockDidChange) { owner, _ in owner.becameActive() }
+        observe(.NSSystemClockDidChange) { owner, _ in owner.systemClockChanged() }
         armSleepTimer()
     }
 
@@ -236,7 +241,7 @@ struct PlaybackSession: Codable, Equatable {
             audio = nil
             self.current = nil
             isPlaying = false
-            progress = 0
+            position.fraction = 0
             timer?.invalidate()
             listening = nil
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
@@ -319,7 +324,7 @@ struct PlaybackSession: Codable, Equatable {
             timer?.invalidate()
             self.current = nil
             isPlaying = false
-            progress = 0
+            position.fraction = 0
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         } else if let current, let index = library.firstIndex(where: { $0.id == current.id }) {
             currentIndex = index
@@ -354,6 +359,7 @@ struct PlaybackSession: Codable, Equatable {
         } else if let currentID {
             current = lookup[currentID]
             currentIndex = songs.firstIndex { $0.id == currentID } ?? 0
+            updateNowPlaying(updateMetadata: true)
         }
         saveSessionNow()
     }
@@ -407,12 +413,12 @@ struct PlaybackSession: Codable, Equatable {
         saveSessionNow()
     }
 
-    func previous() {
+    func previous(restartCurrent: Bool = true) {
         synchronizeTransition()
         guard !expireSleepTimerIfNeeded() else { return }
         let tracks = playbackSongs
         guard !tracks.isEmpty else { return }
-        if (audio?.currentTime ?? 0) > 3 { seek(0); return }
+        if restartCurrent, (audio?.currentTime ?? 0) > 3 { seek(0); return }
         let index = tracks.firstIndex { $0.id == current?.id } ?? 0
         for song in tracks.prefix(max(1, index)).reversed() where prepare(song, at: 0, shouldPlay: true) { break }
         saveSessionNow()
@@ -433,12 +439,13 @@ struct PlaybackSession: Codable, Equatable {
             sleepFading = false
             audio.setVolume(1, fadeDuration: 0)
         } else {
-            configureSession()
+            configureSession(activate: true)
             if sleepFadeEnabled, let deadline = sleepDeadline { audio.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
-            if audio.play() { startTimer() }
+            _ = audio.play()
             resetListeningBaseline()
         }
         isPlaying = audio.isPlaying
+        if isPlaying { startTimer() }
         updateNowPlaying()
         saveSessionNow()
     }
@@ -454,7 +461,6 @@ struct PlaybackSession: Codable, Equatable {
         if sleepFadeEnabled, let deadline = sleepDeadline { audio.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
         audio.currentTime = min(max(0, value * audio.duration), audio.duration)
         resetListeningBaseline()
-        progress = audio.duration == 0 ? 0 : audio.currentTime / audio.duration
         updateNowPlaying()
         saveSessionNow()
     }
@@ -470,7 +476,6 @@ struct PlaybackSession: Codable, Equatable {
         if sleepFadeEnabled, let deadline = sleepDeadline { audio.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
         audio.currentTime = min(max(0, audio.currentTime + seconds), audio.duration)
         resetListeningBaseline()
-        progress = audio.duration == 0 ? 0 : audio.currentTime / audio.duration
         updateNowPlaying()
         saveSessionNow()
     }
@@ -512,7 +517,6 @@ struct PlaybackSession: Codable, Equatable {
         else if !queue.isEmpty || playbackSongs.last?.id != current?.id || shuffle { next() }
         else {
             player.currentTime = 0
-            progress = 0
             isPlaying = false
             timer?.invalidate()
             updateNowPlaying()
@@ -520,13 +524,21 @@ struct PlaybackSession: Codable, Equatable {
         }
     }
 
-    private func configureSession() { try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default); try? AVAudioSession.sharedInstance().setActive(true) }
+    private func configureSession(activate: Bool = false) {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default)
+        if activate { try? session.setActive(true) }
+    }
 
     @discardableResult
     private func prepare(_ song: Song, at position: TimeInterval, shouldPlay: Bool) -> Bool {
         let url = LibraryStore.musicURL.appendingPathComponent(song.fileName)
         guard FileManager.default.fileExists(atPath: url.path), let player = try? AVAudioPlayer(contentsOf: url) else { return false }
-        guard player.prepareToPlay() else { return false }
+        let willPlay = shouldPlay && !interruptionInProgress
+        if willPlay {
+            configureSession(activate: true)
+            guard player.prepareToPlay() else { return false }
+        }
         recordListening()
         cancelScheduledTransition()
         stopOutgoingAudio()
@@ -541,30 +553,38 @@ struct PlaybackSession: Codable, Equatable {
         updateLoopMode()
         sleepFading = false
         if sleepFadeEnabled, let deadline = sleepDeadline { player.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
-        if shouldPlay && !interruptionInProgress { configureSession(); isPlaying = player.play(); if isPlaying { startTimer() } }
-        else { timer?.invalidate(); isPlaying = false }
-        progress = player.duration == 0 ? 0 : player.currentTime / player.duration
-        updateNowPlaying()
+        isPlaying = willPlay && player.play()
+        startTimer()
+        updateNowPlaying(updateMetadata: true)
         armSleepTimer()
         return true
     }
 
     private func startTimer() {
         timer?.invalidate()
-        // Two UI samples per second keep progress responsive without invalidating
-        // every tab and list four times per second.
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.updateProgress() }
+        timer = nil
+        guard isPlaying else { return }
+        let interval = isInBackground ? 2.0 : 0.5
+        let playbackTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateProgress() }
         }
+        playbackTimer.tolerance = interval * 0.1
+        timer = playbackTimer
     }
+
     private func updateProgress() {
         if expireSleepTimerIfNeeded() { return }
         synchronizeTransition()
         recordListening()
-        guard let audio else { return }
-        progress = audio.duration == 0 ? 0 : audio.currentTime / audio.duration
-        updateNowPlaying()
-        if isPlaying, abs(audio.currentTime - lastSavedPosition) >= 10 { scheduleSessionSave() }
+        guard isPlaying, let audio else { return }
+        let elapsed = audio.currentTime
+        if !isInBackground { publishPosition(elapsed: elapsed, duration: audio.duration) }
+        if abs(elapsed - lastSavedPosition) >= 10 { scheduleSessionSave() }
+    }
+
+    private func publishPosition(elapsed: TimeInterval, duration: TimeInterval) {
+        let fraction = duration > 0 ? min(1, max(0, elapsed / duration)) : 0
+        if position.fraction != fraction { position.fraction = fraction }
     }
 
     private func resetListeningBaseline() {
@@ -572,29 +592,29 @@ struct PlaybackSession: Codable, Equatable {
         listeningPosition = audio?.currentTime ?? 0
     }
 
-    private func sampleListening(_ player: AVAudioPlayer, state: inout PlaybackHistoryProgress, clock: inout Double, position: inout Double) -> Int {
+    private func sampleListening(_ player: AVAudioPlayer, state: inout PlaybackHistoryProgress, clock: inout Double, position: inout Double) -> (count: Int, looped: Bool) {
         let now = player.deviceCurrentTime
         let currentPosition = player.currentTime
         let elapsed = max(0, now - clock)
         defer { clock = now; position = currentPosition }
-        guard elapsed.isFinite, player.duration.isFinite, player.duration > 0 else { return 0 }
+        guard elapsed.isFinite, player.duration.isFinite, player.duration > 0 else { return (0, false) }
         if player.numberOfLoops == -1, player.isPlaying {
             let untilLoop = max(0, player.duration - position)
-            guard elapsed >= untilLoop else { return state.consume(elapsed, duration: player.duration) ? 1 : 0 }
+            guard elapsed >= untilLoop else { return (state.consume(elapsed, duration: player.duration) ? 1 : 0, false) }
             var count = state.consume(untilLoop, duration: player.duration) ? 1 : 0
             let remainder = elapsed - untilLoop
             let cycles = min(Double(Int.max / 2), floor(remainder / player.duration))
             count += Int(cycles)
             state = PlaybackHistoryProgress(songID: state.songID)
             if state.consume(remainder.truncatingRemainder(dividingBy: player.duration), duration: player.duration) { count += 1 }
-            return count
+            return (count, true)
         }
-        return state.consume(min(elapsed, max(0, currentPosition - position)), duration: player.duration) ? 1 : 0
+        return (state.consume(min(elapsed, max(0, currentPosition - position)), duration: player.duration) ? 1 : 0, false)
     }
 
     private func recordOutgoingListening() {
         guard let outgoingAudio, let outgoingSong, var state = outgoingListening else { return }
-        let count = sampleListening(outgoingAudio, state: &state, clock: &outgoingListeningClock, position: &outgoingListeningPosition)
+        let (count, _) = sampleListening(outgoingAudio, state: &state, clock: &outgoingListeningClock, position: &outgoingListeningPosition)
         outgoingListening = state
         if count > 0 { outgoingSong.registerPlayback(count: count); historyDirty = true }
     }
@@ -602,9 +622,10 @@ struct PlaybackSession: Codable, Equatable {
     private func recordListening() {
         guard !historySuspended else { return }
         if isPlaying, let audio, let current, var state = listening, state.songID == current.id {
-            let count = sampleListening(audio, state: &state, clock: &listeningClock, position: &listeningPosition)
+            let (count, looped) = sampleListening(audio, state: &state, clock: &listeningClock, position: &listeningPosition)
             listening = state
             if count > 0 { current.registerPlayback(count: count); historyDirty = true }
+            if looped { updateNowPlaying() }
         }
         recordOutgoingListening()
         if historyDirty, let historyContext {
@@ -623,7 +644,30 @@ struct PlaybackSession: Codable, Equatable {
 
     func finishLibraryMutation() { historySuspended = false; refreshScheduledTransition() }
 
-    private func updateNowPlaying() { guard let s = current else { return }; var info: [String: Any] = [MPMediaItemPropertyTitle: s.title, MPMediaItemPropertyArtist: s.artist, MPMediaItemPropertyAlbumTitle: s.album, MPMediaItemPropertyPlaybackDuration: audio?.duration ?? s.duration, MPNowPlayingInfoPropertyElapsedPlaybackTime: audio?.currentTime ?? 0, MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1 : 0]; if let d = s.artworkData, let image = UIImage(data: d) { info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { _ in image } }; MPNowPlayingInfoCenter.default().nowPlayingInfo = info }
+    private func updateNowPlaying(updateMetadata: Bool = false) {
+        guard let song = current else { return }
+        let elapsed = audio?.currentTime ?? 0
+        let duration = audio?.duration ?? song.duration
+        if !isInBackground || !isPlaying { publishPosition(elapsed: elapsed, duration: duration) }
+
+        let center = MPNowPlayingInfoCenter.default()
+        var info = center.nowPlayingInfo ?? [:]
+        if updateMetadata || info.isEmpty {
+            info[MPMediaItemPropertyTitle] = song.title
+            info[MPMediaItemPropertyArtist] = song.artist
+            info[MPMediaItemPropertyAlbumTitle] = song.album
+            if let data = song.artworkData, let image = UIImage(data: data) {
+                info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            } else {
+                info.removeValue(forKey: MPMediaItemPropertyArtwork)
+            }
+        }
+        // MediaPlayer advances elapsed time using the playback rate between events.
+        info[MPMediaItemPropertyPlaybackDuration] = duration
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1 : 0
+        center.nowPlayingInfo = info
+    }
 
     private func restoreSessionIfPossible() {
         guard !didAttemptSessionRestore, !library.isEmpty, let session = pendingSession else { return }
@@ -645,7 +689,7 @@ struct PlaybackSession: Codable, Equatable {
         if !prepare(song, at: session.position, shouldPlay: false) {
             current = nil
             audio = nil
-            progress = 0
+            position.fraction = 0
         }
         if current != nil, session.history?.songID == currentID { listening = session.history }
         saveSessionNow()
@@ -761,13 +805,22 @@ struct PlaybackSession: Codable, Equatable {
             let startsAt = source.deviceCurrentTime + delay
             guard successor.play(atTime: startsAt) else { return }
             scheduledTransition = ScheduledTransition(song: song, player: successor, startsAt: startsAt, overlap: overlap, fromQueue: fromQueue)
-            let work = DispatchWorkItem { [weak self] in
-                MainActor.assumeIsolated { self?.synchronizeTransition() }
-            }
-            transitionWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+            scheduleTransitionCheck(after: delay)
             return
         }
+    }
+
+    private func scheduleTransitionCheck(after delay: TimeInterval) {
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, let next = self.scheduledTransition, let source = self.audio else { return }
+                let remaining = next.startsAt - source.deviceCurrentTime
+                if remaining <= 0 { self.synchronizeTransition() }
+                else if source.isPlaying { self.scheduleTransitionCheck(after: max(0.01, remaining)) }
+            }
+        }
+        transitionWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     private func synchronizeTransition(force: Bool = false) {
@@ -811,8 +864,7 @@ struct PlaybackSession: Codable, Equatable {
             next.player.volume = 1
         }
         updateLoopMode()
-        progress = next.player.currentTime / next.player.duration
-        updateNowPlaying()
+        updateNowPlaying(updateMetadata: true)
         saveSessionNow()
     }
 
@@ -946,7 +998,20 @@ struct PlaybackSession: Codable, Equatable {
     private func resumeFromRemote() { if !isPlaying { toggle() } }
     private func pauseFromRemote() { resumeAfterInterruption = false; if isPlaying { toggle() } }
     @objc private func saveForAppTransition() { _ = expireSleepTimerIfNeeded(); synchronizeTransition(); saveSessionNow(refreshTransition: false) }
+    private func enteredBackground() {
+        isInBackground = true
+        saveForAppTransition()
+        startTimer()
+    }
+
     @objc private func becameActive() {
+        isInBackground = false
+        systemClockChanged()
+        if let audio { publishPosition(elapsed: audio.currentTime, duration: audio.duration) }
+        startTimer()
+    }
+
+    private func systemClockChanged() {
         guard !expireSleepTimerIfNeeded() else { return }
         synchronizeTransition()
         armSleepTimer()
@@ -989,6 +1054,7 @@ struct PlaybackSession: Codable, Equatable {
         stopOutgoingAudio()
         audio = nil
         isPlaying = false
+        startTimer()
         interruptionInProgress = false
         resumeAfterInterruption = false
         configureSession()

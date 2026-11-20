@@ -4,6 +4,7 @@ import Foundation
 import Security
 import Darwin
 import Vision
+import Combine
 
 final class MockMacServer: @unchecked Sendable {
     static let shared = MockMacServer()
@@ -138,9 +139,14 @@ actor DelayedMacAPI: MacCompanionNetworking {
         try await Task.sleep(nanoseconds: 150_000_000)
         precondition(mock.counts().health == stoppedCount)
         mock.configure("onceOffline")
+        var reconnectStates: [MacConnectionStatus] = []
+        let reconnectObserver = store.$status.sink { reconnectStates.append($0) }
         store.setActive(true)
         await wait { store.status == .unreachable }
         await wait { store.status == .connected }
+        reconnectObserver.cancel()
+        precondition(reconnectStates == [.connected, .unreachable, .connected] && mock.counts().health == stoppedCount + 2,
+                     "An automatic retry must keep the offline status stable and issue a single new request")
         store.setActive(false)
         let restored = MacConnectionStore(keychain: keychain, api: api, monitorsNetwork: false)
         restored.setActive(true)

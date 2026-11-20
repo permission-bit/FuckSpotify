@@ -72,32 +72,47 @@ extension View {
 }
 
 /// Decode only the pixels needed for display, off the main thread.
-enum ArtworkThumbnails {
-    private static let cache: NSCache<NSData, UIImage> = {
-        let cache = NSCache<NSData, UIImage>()
+actor ArtworkThumbnails {
+    static let shared = ArtworkThumbnails()
+
+    private final class Key: NSObject {
+        let data: NSData
+        let pixels: Int
+
+        init(data: Data, pixels: Int) {
+            self.data = data as NSData
+            self.pixels = pixels
+        }
+
+        override var hash: Int { data.hash &+ pixels }
+
+        override func isEqual(_ object: Any?) -> Bool {
+            guard let other = object as? Key else { return false }
+            return pixels == other.pixels && data.isEqual(other.data)
+        }
+    }
+
+    private let cache: NSCache<Key, UIImage> = {
+        let cache = NSCache<Key, UIImage>()
         cache.totalCostLimit = 24 * 1024 * 1024
         cache.countLimit = 120
         return cache
     }()
 
-    static func image(_ data: Data, pixels: Int) async -> UIImage? {
-        await Task.detached(priority: .utility) {
-            // Include resolution in the key so a small row thumbnail never serves the player.
-            var keyData = Data("\(pixels):".utf8)
-            keyData.append(data)
-            let key = keyData as NSData
-            if let cached = cache.object(forKey: key) { return cached }
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-                  let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceThumbnailMaxPixelSize: pixels,
-                    kCGImageSourceCreateThumbnailWithTransform: true,
-                    kCGImageSourceShouldCacheImmediately: true
-                  ] as CFDictionary) else { return nil }
-            let image = UIImage(cgImage: thumbnail)
-            cache.setObject(image, forKey: key, cost: thumbnail.bytesPerRow * thumbnail.height + data.count)
-            return image
-        }.value
+    func image(_ data: Data, pixels: Int) -> UIImage? {
+        guard !Task.isCancelled else { return nil }
+        let key = Key(data: data, pixels: pixels)
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: pixels,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { return nil }
+        let image = UIImage(cgImage: thumbnail)
+        cache.setObject(image, forKey: key, cost: thumbnail.bytesPerRow * thumbnail.height + data.count)
+        return image
     }
 }
 
@@ -105,7 +120,6 @@ enum ArtworkThumbnails {
 struct SystemVolumeControl: UIViewRepresentable {
     func makeUIView(context: Context) -> MPVolumeView {
         let view = MPVolumeView(frame: .zero)
-        view.showsRouteButton = false
         view.tintColor = UIColor(AppTheme.accent)
         return view
     }

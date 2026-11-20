@@ -63,7 +63,8 @@ extension Importer {
     private static var stagingURL: URL { LibraryStore.musicURL.appendingPathComponent(".imports", isDirectory: true) }
 
     @discardableResult static func stageAndImport(_ source: URL, context: ModelContext, fileName: String? = nil,
-        expectedSHA256: String? = nil, expectedSize: Int64? = nil, expectedDuration: Double? = nil, metadata: [String: String]? = nil) async throws -> Song {
+        expectedSHA256: String? = nil, expectedSize: Int64? = nil, expectedDuration: Double? = nil, metadata: [String: String]? = nil,
+        saveImmediately: Bool = true) async throws -> Song {
         try FileManager.default.createDirectory(at: stagingURL, withIntermediateDirectories: true)
         let key = UUID().uuidString
         let receipt = stagingURL.appendingPathComponent(key + ".json")
@@ -79,7 +80,7 @@ extension Importer {
         }.value
         job.ready = true
         try JSONEncoder().encode(job).write(to: receipt, options: .atomic)
-        return try await finishImport(job, receipt: receipt, partial: partial, context: context)
+        return try await finishImport(job, receipt: receipt, partial: partial, context: context, saveImmediately: saveImmediately)
     }
 
     static func recoverInterruptedImports(context: ModelContext) async throws {
@@ -98,7 +99,7 @@ extension Importer {
         }
     }
 
-    @discardableResult private static func finishImport(_ job: MusicImportJob, receipt: URL, partial: URL, context: ModelContext) async throws -> Song {
+    @discardableResult private static func finishImport(_ job: MusicImportJob, receipt: URL, partial: URL, context: ModelContext, saveImmediately: Bool = true) async throws -> Song {
         let destination = LibraryStore.musicURL.appendingPathComponent(job.fileName)
         let fileName = job.fileName
         let audioURL = FileManager.default.fileExists(atPath: destination.path) ? destination : partial
@@ -108,7 +109,7 @@ extension Importer {
         if let existing = try context.fetch(FetchDescriptor<Song>(predicate: #Predicate { $0.fileName == fileName })).first {
             try Task.checkCancellation()
             if audioURL == partial { try FileManager.default.moveItem(at: partial, to: destination) }
-            try context.save()
+            if saveImmediately { try context.save() }
             try FileManager.default.removeItem(at: receipt)
             if FileManager.default.fileExists(atPath: partial.path) { try FileManager.default.removeItem(at: partial) }
             return existing
@@ -123,7 +124,10 @@ extension Importer {
         let embeddedTitle = await value(.commonIdentifierTitle)
         let embeddedArtist = await value(.commonIdentifierArtist)
         let embeddedAlbum = await value(.commonIdentifierAlbumName)
-        let embeddedGenre = (try? await AudioMetadata.genre(at: audioURL)) ?? ""
+        let embeddedGenre: String = await firstMetadataValue(in: metadata, identifiers: [
+            .id3MetadataContentType, .iTunesMetadataUserGenre, .quickTimeMetadataGenre,
+            .quickTimeUserDataGenre, .iTunesMetadataPredefinedGenre
+        ])
         let title = job.remoteMetadata?["title"] ?? embeddedTitle
         let artist = job.remoteMetadata?["artist"] ?? embeddedArtist
         let album = job.remoteMetadata?["album"] ?? embeddedAlbum
@@ -133,8 +137,13 @@ extension Importer {
         if let item = AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: .commonIdentifierArtwork).first { artwork = try? await item.load(.dataValue) }
         let song = Song(title: title.isEmpty ? URL(fileURLWithPath: job.originalName).deletingPathExtension().lastPathComponent : title, artist: artist.isEmpty ? "Unbekannter Künstler" : artist, album: album.isEmpty ? "Unbekanntes Album" : album, duration: duration.isFinite ? duration : 0, fileName: fileName, artworkData: artwork, importedGenre: genre)
         song.genreMetadataLoaded = true
-        let embeddedTrack = try? await AudioMetadata.trackNumber(at: audioURL)
+        let embeddedTrackValue = await firstMetadataValue(in: metadata, identifiers: [
+            .id3MetadataTrackNumber, .iTunesMetadataTrackNumber
+        ])
+        let embeddedTrack: Int? = embeddedTrackValue.split(separator: "/").first.flatMap { Int($0) }
         song.trackNumber = job.remoteMetadata?["track"].flatMap { Int($0.split(separator: "/").first.map(String.init) ?? "") } ?? embeddedTrack
+        await CatalogUpdates.finishPendingWrite()
+        try Task.checkCancellation()
         var genres = try context.fetch(FetchDescriptor<MusicGenre>())
         if !genre.isEmpty, !genres.contains(where: { MusicCatalog.normalized($0.name) == MusicCatalog.normalized(genre) }) {
             let created = MusicGenre(name: genre)
@@ -145,9 +154,20 @@ extension Importer {
         try Task.checkCancellation()
         if audioURL == partial { try FileManager.default.moveItem(at: partial, to: destination) }
         context.insert(song)
-        try context.save()
+        if saveImmediately { try context.save() }
         try FileManager.default.removeItem(at: receipt)
         return song
+    }
+
+    private static func firstMetadataValue(in metadata: [AVMetadataItem], identifiers: [AVMetadataIdentifier]) async -> String {
+        for identifier in identifiers {
+            for item in AVMetadataItem.metadataItems(from: metadata, filteredByIdentifier: identifier) {
+                if let value = try? await item.load(.stringValue), !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    return value
+                }
+            }
+        }
+        return ""
     }
 
     static func importFolders(_ result: Result<[URL], Error>, context: ModelContext) async {
