@@ -7,5 +7,5 @@ Projede SwiftUI/SwiftData uygulaması, isteğe bağlı yerel Mac Companion, dosy
 aktarma, oynatma, çalma listeleri, YouTube arama/önizleme ve yetkili dosyalar
 için güvenli HTTPS aktarımı bulunur.
 
-İngilizce tam dokümantasyon: [README.md](README.md)
+İngilizce tam dokümantasyon: [README.md](../README.md)
 

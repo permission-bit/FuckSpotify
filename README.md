@@ -16,12 +16,21 @@ firewall rules or a login item automatically.
 ## Documentation languages
 
 The full documentation is maintained in English. Short project summaries are
-available in the supported app languages:
+available in [11 additional languages](README-translations/README.md):
 
-[Deutsch](README.de.md) · [Español](README.es.md) · [Français](README.fr.md) ·
-[Italiano](README.it.md) · [Português](README.pt-BR.md) ·
-[Nederlands](README.nl.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) ·
-[日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh-Hans.md)
+| Language | Summary |
+| --- | --- |
+| Deutsch | [README](README-translations/README.de.md) |
+| Español | [README](README-translations/README.es.md) |
+| Français | [README](README-translations/README.fr.md) |
+| Italiano | [README](README-translations/README.it.md) |
+| Português (Brasil) | [README](README-translations/README.pt-BR.md) |
+| Nederlands | [README](README-translations/README.nl.md) |
+| Polski | [README](README-translations/README.pl.md) |
+| Türkçe | [README](README-translations/README.tr.md) |
+| 日本語 | [README](README-translations/README.ja.md) |
+| 한국어 | [README](README-translations/README.ko.md) |
+| 简体中文 | [README](README-translations/README.zh-Hans.md) |
 
 ## Features
 
@@ -135,6 +144,7 @@ device-level checks that still require a real iPhone.
 | `playlist.py` | Legacy interactive converter CLI |
 | `Tests/` | Python, Swift and integration tests |
 | `.github/workflows/` | GitHub Actions workflow for Companion artifacts/releases |
+| `README-translations/` | Short README summaries in 11 additional languages |
 
 ## Privacy and security
 

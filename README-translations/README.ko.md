@@ -7,5 +7,5 @@ SwiftUI/SwiftData 앱, 선택 가능한 로컬 Mac Companion, 파일 가져오�
 플레이리스트, YouTube 검색/미리보기, 승인된 파일의 안전한 HTTPS 전송을
 제공합니다.
 
-전체 영어 문서: [README.md](README.md)
+전체 영어 문서: [README.md](../README.md)
 

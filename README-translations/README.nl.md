@@ -8,5 +8,5 @@ Het project bevat een SwiftUI/SwiftData-app, een optionele lokale Mac Companion,
 bestandimport, afspelen, afspeellijsten, YouTube zoeken/voorvertonen en veilige
 HTTPS-overdracht van geautoriseerde bestanden.
 
-Volledige documentatie in het Engels: [README.md](README.md)
+Volledige documentatie in het Engels: [README.md](../README.md)
 

@@ -8,5 +8,5 @@ O projeto inclui um app SwiftUI/SwiftData, um Companion local opcional para Mac,
 importação de arquivos, reprodução, playlists, busca/prévia do YouTube e
 transferência HTTPS de arquivos autorizados.
 
-Documentação completa em inglês: [README.md](README.md)
+Documentação completa em inglês: [README.md](../README.md)
 

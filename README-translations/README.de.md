@@ -8,5 +8,5 @@ Enthalten sind eine SwiftUI/SwiftData-App, ein optionaler lokaler Mac Companion,
 Dateiimport, Wiedergabe, Playlists, YouTube-Suche/-Vorschau und sichere
 Übertragung autorisierter Dateien über HTTPS.
 
-Vollständige englische Dokumentation: [README.md](README.md)
+Vollständige englische Dokumentation: [README.md](../README.md)
 
