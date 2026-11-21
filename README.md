@@ -1,10 +1,10 @@
-# OfflineMusic
+# jox
 
 [![iOS 17+](https://img.shields.io/badge/iOS-17%2B-0a84ff)](https://developer.apple.com/ios/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange)](https://developer.apple.com/xcode/swiftui/)
 [![License: not yet selected](https://img.shields.io/badge/license-not%20yet%20selected-lightgrey)](#license)
 
-OfflineMusic is a native offline music player for iPhone, built with SwiftUI,
+jox is a native offline music player for iPhone, built with SwiftUI,
 SwiftData and AVFoundation. Your library stays on the device: there is no
 account, analytics, public server or required internet connection.
 

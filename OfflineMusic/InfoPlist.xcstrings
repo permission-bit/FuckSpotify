@@ -8,7 +8,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Offline Music"
+            "value" : "jox"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "jox"
           }
         }
       }
@@ -20,7 +26,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "OfflineMusic"
+            "value" : "jox"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "jox"
           }
         }
       }
@@ -48,13 +60,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Offline Music findet deinen Mac im Heimnetz und verbindet sich sicher mit deinem lokalen Musik-Companion."
+            "value" : "jox findet deinen Mac im Heimnetz und verbindet sich sicher mit deinem lokalen Musik-Companion."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Offline Music finds your Mac on the home network and securely connects to your local music Companion."
+            "value" : "jox finds your Mac on the home network and securely connects to your local music Companion."
           }
         }
       }
