@@ -577,3 +577,79 @@ enum DuplicateLibraryStore {
         return safeIDs.count
     }
 }
+
+@MainActor
+enum AudioTrimStore {
+    private struct Receipt: Codable {
+        let original: String
+        let replacement: String
+    }
+
+    private static var receiptsURL: URL {
+        LibraryStore.musicURL.appendingPathComponent(".audio-trims", isDirectory: true)
+    }
+
+    static func replace(_ song: Song, original: String, with clip: URL, duration: TimeInterval, in context: ModelContext) throws {
+        guard song.modelContext === context, !song.isDeleted, song.fileName == original,
+              isFileName(original), duration.isFinite, duration > 0 else { throw CocoaError(.fileWriteUnknown) }
+
+        let files = FileManager.default
+        let library = LibraryStore.musicURL
+        let id = UUID().uuidString
+        let stem = URL(fileURLWithPath: original).deletingPathExtension().lastPathComponent
+            .replacingOccurrences(of: "^trim-[0-9A-Fa-f-]{36}-", with: "", options: .regularExpression)
+        let name = "trim-\(id)-\(String(decoding: stem.utf8.prefix(200), as: UTF8.self)).m4a"
+        let destination = library.appendingPathComponent(name)
+        guard files.fileExists(atPath: library.appendingPathComponent(original).path),
+              !files.fileExists(atPath: destination.path) else { throw CocoaError(.fileWriteUnknown) }
+
+        try context.save()
+        try files.createDirectory(at: receiptsURL, withIntermediateDirectories: true)
+        let receiptURL = receiptsURL.appendingPathComponent(id + ".json")
+        let receipt = Receipt(original: original, replacement: name)
+        try JSONEncoder().encode(receipt).write(to: receiptURL, options: .atomic)
+        do {
+            try files.moveItem(at: clip, to: destination)
+            song.fileName = name
+            song.duration = duration
+            try context.save()
+        } catch {
+            context.rollback()
+            try? settle(receipt, at: receiptURL, in: context)
+            throw error
+        }
+        try? settle(receipt, at: receiptURL, in: context)
+    }
+
+    static func recover(in context: ModelContext) throws {
+        let files = FileManager.default
+        guard files.fileExists(atPath: receiptsURL.path) else { return }
+        for url in try files.contentsOfDirectory(at: receiptsURL, includingPropertiesForKeys: nil) where url.pathExtension == "json" {
+            guard let data = try? Data(contentsOf: url),
+                  let receipt = try? JSONDecoder().decode(Receipt.self, from: data),
+                  isFileName(receipt.original), isFileName(receipt.replacement),
+                  receipt.replacement.hasPrefix("trim-" + url.deletingPathExtension().lastPathComponent + "-"),
+                  receipt.original != receipt.replacement else { continue }
+            try settle(receipt, at: url, in: context)
+        }
+    }
+
+    private static func settle(_ receipt: Receipt, at url: URL, in context: ModelContext) throws {
+        let files = FileManager.default
+        let original = receipt.original, replacement = receipt.replacement
+        let descriptor = FetchDescriptor<Song>(predicate: #Predicate { $0.fileName == original || $0.fileName == replacement })
+        let referenced = Set(try context.fetch(descriptor).map(\.fileName))
+        let library = LibraryStore.musicURL
+        // Only discard audio when a library entry confirms which file is in use.
+        guard referenced.allSatisfy({ files.fileExists(atPath: library.appendingPathComponent($0).path) }) else { return }
+        for name in [original, replacement] where !referenced.isEmpty && !referenced.contains(name) {
+            let obsolete = library.appendingPathComponent(name)
+            if files.fileExists(atPath: obsolete.path) { try files.removeItem(at: obsolete) }
+        }
+        try files.removeItem(at: url)
+    }
+
+    private static func isFileName(_ name: String) -> Bool {
+        !name.isEmpty && !name.hasPrefix(".") && URL(fileURLWithPath: name).lastPathComponent == name
+    }
+}

@@ -92,7 +92,8 @@ struct MacConnectionView: View {
                     Button("iPhone-App-Einstellungen öffnen", systemImage: "gearshape") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                     }
-                    Text("Falls die Verbindung blockiert ist: Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk → Offline Music einschalten. In den App-Einstellungen auch die Kamera für den QR-Code erlauben.").font(.footnote).foregroundStyle(AppTheme.secondaryText)
+                    Text("Falls die Verbindung blockiert ist, aktiviere jox unter Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk. Erlaube jox in den Einstellungen auch den Kamerazugriff, um den QR-Code zu scannen.")
+                        .font(.footnote).foregroundStyle(AppTheme.secondaryText)
                     Text("Mac: Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk. Beide Geräte müssen im gleichen erreichbaren WLAN sein.").font(.footnote).foregroundStyle(AppTheme.secondaryText)
                 }
                 }.listRowBackground(AppTheme.surface)

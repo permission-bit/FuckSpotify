@@ -25,26 +25,9 @@ struct RootView: View {
     @Query(sort: \Song.title) private var songs: [Song]
     @Query(filter: #Predicate<Playlist> { $0.artistName == "" }, sort: \Playlist.name) private var songRowPlaylists: [Playlist]
     @EnvironmentObject private var player: AudioPlayer
+
     var body: some View {
-        TabView {
-            HomeView().tabItem { Label("Start", systemImage: "house.fill") }
-            LibraryView().tabItem { Label("Bibliothek", systemImage: "music.note.list") }
-            SearchView().tabItem { Label("Suche", systemImage: "magnifyingglass") }
-            PlaylistsView().tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if player.current != nil {
-                Color.clear.frame(height: 88)
-            }
-        }
-        .contentMargins(.bottom, player.current == nil ? 16 : 104, for: .scrollContent)
-        .overlay(alignment: .bottom) {
-            if player.current != nil {
-                MiniPlayer(onOpen: { showingNowPlaying = true })
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 78)
-            }
-        }
+        tabNavigation
         .musicScreen()
         .tint(appTint)
         .environmentObject(mac.connection)
@@ -64,6 +47,7 @@ struct RootView: View {
         .task {
             do {
                 try DuplicateLibraryStore.recover(in: context)
+                try AudioTrimStore.recover(in: context)
                 try await Importer.recoverInterruptedImports(context: context)
                 try await CatalogUpdates.write(in: context) { try MusicCatalog.seed(in: $0) }
                 mac.imports.attach(context.container)
@@ -73,6 +57,33 @@ struct RootView: View {
         .alert("Musikkatalog konnte nicht geladen werden", isPresented: Binding(get: { catalogError != nil }, set: { if !$0 { catalogError = nil } })) {
             Button("OK") { catalogError = nil }
         } message: { Text(L10n.text(catalogError ?? "")) }
+    }
+
+    @ViewBuilder private var tabNavigation: some View {
+        if #available(iOS 26.1, *) {
+            tabs.tabViewBottomAccessory(isEnabled: player.current != nil) {
+                MiniPlayer(onOpen: { showingNowPlaying = true })
+            }
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
+        TabView {
+            tabContent(HomeView()).tabItem { Label("Start", systemImage: "house.fill") }
+            tabContent(LibraryView()).tabItem { Label("Bibliothek", systemImage: "music.note.list") }
+            tabContent(SearchView()).tabItem { Label("Suche", systemImage: "magnifyingglass") }
+            tabContent(PlaylistsView()).tabItem { Label("Playlists", systemImage: "rectangle.stack.fill") }
+        }
+    }
+
+    @ViewBuilder private func tabContent<Content: View>(_ content: Content) -> some View {
+        if #available(iOS 26.1, *) {
+            content
+        } else {
+            content.modifier(LegacyMiniPlayerInset(onOpen: { showingNowPlaying = true }))
+        }
     }
 }
 
@@ -86,42 +97,52 @@ struct HomeView: View {
         let favorites = Array(songs.lazy.filter(\.isFavorite).prefix(5))
         NavigationStack {
             List {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Deine Musik").font(.largeTitle.bold()).tracking(-0.6)
-                    Text("Offline hören, ganz ohne Ablenkung.").foregroundStyle(AppTheme.secondaryText)
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 12, trailing: 0))
                 Section {
                     NavigationLink { ImportHubView() } label: {
-                        Label {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("YouTube & Import").font(.headline)
-                                Text("Entdecken, Vorschau und eigene Musik importieren").font(.caption).foregroundStyle(AppTheme.secondaryText)
-                            }.padding(.vertical, 10)
-                        } icon: { Image(systemName: "play.rectangle.on.rectangle").font(.title2).foregroundStyle(.tint) }
+                        HStack(spacing: 14) {
+                            MusicIconTile(symbol: "square.and.arrow.down", size: 52)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("YouTube & Import").font(.headline).foregroundStyle(AppTheme.text)
+                                Text("YouTube-Vorschau und lokale Dateien")
+                                    .font(.subheadline).foregroundStyle(AppTheme.secondaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(.vertical, 8)
                     }
                 }
                 .listRowBackground(AppTheme.surface)
                 if songs.isEmpty {
                     EmptyLibraryCard { importingFolder = true; showImporter = true }
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(AppTheme.surface)
+                        .listRowSeparator(.hidden)
                 } else {
-                    Section {
-                        ForEach(songs.prefix(8)) { SongRow(song: $0) }
-                    } header: { Label("Zuletzt hinzugefügt", systemImage: "clock") }
                     if !favorites.isEmpty {
                         Section {
                             ForEach(favorites) { SongRow(song: $0) }
-                        } header: { Label("Favoriten", systemImage: "heart.fill") }
+                            NavigationLink { SmartPlaylistDetail(kind: .favorites) } label: {
+                                Text("Alle Favoriten anzeigen")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(AppTheme.accent)
+                                    .frame(minHeight: 36, alignment: .leading)
+                            }
+                            .listRowBackground(Color.clear)
+                        } header: {
+                            Label("Favoriten", systemImage: "heart.fill").musicSectionHeading()
+                        }
+                    }
+                    Section {
+                        ForEach(songs.prefix(8)) { SongRow(song: $0) }
+                    } header: {
+                        Text("Zuletzt hinzugefügt").musicSectionHeading()
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .listSectionSpacing(20)
             .musicScreen()
-            .navigationTitle("Start")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Deine Musik")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     MacConnectionButton { showingMacConnection = true }
@@ -157,15 +178,32 @@ private struct MacConnectionButton: View {
 
 struct EmptyLibraryCard: View {
     let action: () -> Void
-    var body: some View { VStack(spacing: 14) { Image(systemName: "music.note.list").font(.system(size: 38)).foregroundStyle(appTint); Text("Deine Bibliothek ist noch leer").font(.headline); Text("Importiere einen Musikordner, um loszulegen.").font(.subheadline).foregroundStyle(AppTheme.secondaryText).multilineTextAlignment(.center); Button("Ordner auswählen", action: action).buttonStyle(.borderedProminent).tint(appTint).foregroundStyle(AppTheme.onAccent) }.frame(maxWidth: .infinity).padding(28).background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 20)) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            MusicIconTile(symbol: "music.note.list")
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Deine Bibliothek ist noch leer").font(.title3.weight(.semibold))
+                Text("Importiere einen Musikordner, um loszulegen.")
+                    .font(.subheadline).foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Button("Ordner auswählen", systemImage: "folder", action: action)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .foregroundStyle(AppTheme.onAccent)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 12)
+    }
 }
 
 struct LibraryView: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Song.title) private var songs: [Song]
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var player: AudioPlayer
     @State private var mode = 0
+    @State private var artistTrackFilter = ArtistTrackFilter.all
     @State private var editMode: EditMode = .inactive
     @State private var selectedIDs = Set<UUID>()
     @State private var showingActions = false
@@ -173,68 +211,84 @@ struct LibraryView: View {
     @State private var showingDuplicates = false
 
     var body: some View {
+        let showingArtistFavorites = mode == 2 && artistTrackFilter == .favorites
+        let visibleSongs = mode == 2 ? artistTrackFilter.tracks(in: songs) : songs
         NavigationStack {
-            VStack(spacing: 12) {
-                Group {
-                    if dynamicTypeSize.isAccessibilitySize { libraryPicker.pickerStyle(.menu) }
-                    else { libraryPicker.pickerStyle(.segmented) }
+            VStack(spacing: 0) {
+                VStack(spacing: 8) {
+                    libraryPicker
+                    if mode == 2 { ArtistTrackFilterPicker(selection: $artistTrackFilter) }
                 }
-                .padding(.horizontal)
-
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
                 List(selection: $selectedIDs) {
-                    if mode == 0 {
+                    if songs.isEmpty {
+                        ContentUnavailableView("Deine Bibliothek ist noch leer", systemImage: "music.note.list")
+                            .listRowBackground(Color.clear)
+                    } else if mode == 0 {
                         ForEach(songs) { SongRow(song: $0).tag($0.id) }
                             .onDelete { offsets in offsets.forEach { context.delete(songs[$0]) } }
+                    } else if showingArtistFavorites && visibleSongs.isEmpty {
+                        ContentUnavailableView("Noch keine Favoriten", systemImage: "heart")
+                            .listRowBackground(Color.clear)
                     } else {
-                        ForEach(grouped, id: \.key) { item in
+                        ForEach(grouped(visibleSongs), id: \.key) { item in
                             Section {
-                                ForEach(item.value) { SongRow(song: $0).tag($0.id) }
+                                ForEach(item.value) { song in
+                                    SongRow(song: song, playbackCollection: showingArtistFavorites ? item.value : nil)
+                                        .tag(song.id)
+                                }
                             } header: {
-                                Text(mode == 1 ? MetadataText.album(item.key) : MetadataText.artist(item.key))
+                                Text(mode == 1 ? MetadataText.album(item.key) : MetadataText.artist(item.key)).musicSectionHeading()
                             }
                         }
                     }
                 }
                 .listStyle(.insetGrouped)
-                .environment(\.editMode, $editMode)
+                .listSectionSpacing(16)
                 .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             }
             .background(AppTheme.background)
             .musicScreen()
             .navigationTitle("Bibliothek")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if editMode.isEditing {
-                        Button(LocalizedStringKey(selectedIDs.count == songs.count ? "Auswahl aufheben" : "Alle auswählen")) {
-                            if selectedIDs.count == songs.count { selectedIDs.removeAll() }
-                            else { selectedIDs = Set(songs.map(\.id)) }
+                        Button(LocalizedStringKey(selectedIDs.count == visibleSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
+                            if selectedIDs.count == visibleSongs.count { selectedIDs.removeAll() }
+                            else { selectedIDs = Set(visibleSongs.map(\.id)) }
                         }
-                    } else { EditButton() }
+                        .disabled(visibleSongs.isEmpty)
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if editMode.isEditing, !selectedIDs.isEmpty {
-                        Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText)
+                        Button("Aktionen · \(selectedIDs.count) ausgewählt", systemImage: "ellipsis.circle") { showingActions = true }
+                            .labelStyle(.iconOnly)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if editMode.isEditing {
+                        if !selectedIDs.isEmpty {
+                            Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
+                                .labelStyle(.iconOnly)
+                        }
                     } else {
                         Button("Duplikate", systemImage: "doc.on.doc") { showingDuplicates = true }
                     }
                 }
-                ToolbarItemGroup(placement: .bottomBar) {
-                    if editMode.isEditing {
-                        Button("Aktionen", systemImage: "ellipsis.circle") { showingActions = true }
-                            .disabled(selectedIDs.isEmpty)
-                        Spacer()
-                        Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
-                            .disabled(selectedIDs.isEmpty)
-                    }
-                }
+                ToolbarItem(placement: .topBarTrailing) { EditButton() }
             }
+            .environment(\.editMode, $editMode)
+            .onChange(of: visibleSongs.map(\.id)) { _, ids in selectedIDs.formIntersection(ids) }
             .sheet(isPresented: $showingActions) {
-                LibrarySelectionActions(songs: songs.filter { selectedIDs.contains($0.id) }, onFinish: finishSelection)
+                LibrarySelectionActions(songs: visibleSongs.filter { selectedIDs.contains($0.id) }, onFinish: finishSelection)
             }
             .sheet(isPresented: $showingDuplicates) { DuplicateManagerView() }
             .confirmationDialog("Bibliothekseinträge löschen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
                 Button("Löschen", role: .destructive) {
-                    songs.filter { selectedIDs.contains($0.id) }.forEach(context.delete)
+                    visibleSongs.filter { selectedIDs.contains($0.id) }.forEach(context.delete)
                     finishSelection()
                 }
             } message: {
@@ -250,14 +304,12 @@ struct LibraryView: View {
     }
 
     private var libraryPicker: some View {
-        Picker("Ansicht", selection: $mode) {
-            Text("Titel").tag(0)
-            Text("Alben").tag(1)
-            Text("Künstler").tag(2)
-        }.frame(minHeight: 44)
+        MusicFilterPicker(title: "Ansicht", options: [(0, "Titel"), (1, "Alben"), (2, "Künstler")], selection: $mode)
     }
 
-    private var grouped: [(key: String, value: [Song])] { Dictionary(grouping: songs) { mode == 1 ? $0.album : $0.artist }.sorted { $0.key < $1.key } }
+    private func grouped(_ songs: [Song]) -> [(key: String, value: [Song])] {
+        Dictionary(grouping: songs) { mode == 1 ? $0.album : $0.artist }.sorted { $0.key < $1.key }
+    }
 }
 
 struct SearchView: View {
@@ -272,12 +324,17 @@ struct SearchView: View {
                 .listStyle(.insetGrouped)
                 .overlay {
                     if results.isEmpty {
-                        ContentUnavailableView.search(text: query)
+                        if songs.isEmpty && query.isEmpty {
+                            ContentUnavailableView("Deine Bibliothek ist noch leer", systemImage: "music.note.list")
+                        } else {
+                            ContentUnavailableView.search(text: query)
+                        }
                     }
                 }
-                .searchable(text: $query, prompt: "Titel, Künstler, Album oder Genre")
+                .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Titel, Künstler, Album oder Genre")
                 .musicScreen()
                 .navigationTitle("Suche")
+                .navigationBarTitleDisplayMode(.large)
         }
     }
 
@@ -313,51 +370,64 @@ struct PlaylistsView: View {
             List(selection: $selectedIDs) {
                 Section {
                     NavigationLink(value: Route.catalog) {
-                        Label("Genres & Künstler", systemImage: "guitars")
+                        HStack(spacing: 12) {
+                            MusicIconTile(symbol: "guitars")
+                            Text("Genres & Künstler").font(.headline)
+                        }
+                        .padding(.vertical, 4)
                     }
+                    .listRowBackground(AppTheme.surface)
                 }
-                Section("Deine Playlists") {
-                    ForEach(visiblePlaylists) { playlist in
-                        NavigationLink(value: Route.playlist(playlist.id)) {
-                            HStack(spacing: 12) {
-                                PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist, songsByID: songsByID))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(playlist.name)
-                                    if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(AppTheme.secondaryText) }
+                if !visiblePlaylists.isEmpty {
+                    Section {
+                        ForEach(visiblePlaylists) { playlist in
+                            NavigationLink(value: Route.playlist(playlist.id)) {
+                                HStack(spacing: 12) {
+                                    PlaylistArtwork(playlist: playlist, fallbackData: artworkData(for: playlist, songsByID: songsByID))
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(playlist.name).font(.headline)
+                                        if !playlist.artistName.isEmpty { Text("Artist playlist · \(playlist.artistName)").font(.caption).foregroundStyle(AppTheme.secondaryText) }
+                                    }
                                 }
                             }
+                            .tag(playlist.id)
+                            .contextMenu {
+                                Button("Umbenennen / Bearbeiten", systemImage: "pencil") { editingPlaylist = playlist }
+                                Button("Cover ändern", systemImage: "photo") { editingPlaylist = playlist }
+                                Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(playlist) }
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(AppTheme.separator)
                         }
-                        .tag(playlist.id)
-                        .contextMenu {
-                            Button("Umbenennen / Bearbeiten", systemImage: "pencil") { editingPlaylist = playlist }
-                            Button("Cover ändern", systemImage: "photo") { editingPlaylist = playlist }
-                            Button("Löschen", systemImage: "trash", role: .destructive) { context.delete(playlist) }
+                        .onDelete { indexes in
+                            indexes.forEach { context.delete(visiblePlaylists[$0]) }
                         }
-                    }
-                    .onDelete { indexes in
-                        indexes.forEach { context.delete(visiblePlaylists[$0]) }
+                    } header: {
+                        Text("Deine Playlists").musicSectionHeading()
                     }
                 }
-                Section("Smart Playlists") {
+                Section {
                     ForEach(SmartPlaylistKind.allCases.filter { query.isEmpty || L10n.text($0.title).localizedStandardContains(query) || $0.title.localizedStandardContains(query) }) { kind in
                         NavigationLink(value: Route.smart(kind)) {
                             HStack(spacing: 12) {
-                                Image(systemName: kind.symbol).font(.title2).frame(width: 48, height: 48).foregroundStyle(appTint)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(LocalizedStringKey(kind.title))
-                                    Text("Smart Playlist · automatisch").font(.caption).foregroundStyle(AppTheme.secondaryText)
-                                }
+                                MusicIconTile(symbol: kind.symbol, size: 42)
+                                Text(LocalizedStringKey(kind.title)).font(.headline)
                             }
                         }
                         .selectionDisabled()
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(AppTheme.separator)
                     }
+                } header: {
+                    Text("Smart Playlists").musicSectionHeading()
                 }
             }
             .listStyle(.insetGrouped)
-            .environment(\.editMode, $editMode)
+            .listSectionSpacing(20)
             .animation(.easeInOut(duration: 0.2), value: selectedIDs)
             .musicScreen()
             .navigationTitle("Playlists")
+            .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .smart(let kind): SmartPlaylistDetail(kind: kind)
@@ -370,13 +440,15 @@ struct PlaylistsView: View {
                     }
                 }
             }
-            .searchable(text: $query, prompt: "Playlists oder Künstler suchen")
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Playlists oder Künstler suchen")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Playlist erstellen", systemImage: "music.note.list") { showingPlaylistAlert = true }
-                        Button("Create Artist +", systemImage: "person.crop.circle.badge.plus") { showingArtistAlert = true }
-                    } label: { Image(systemName: "plus.circle.fill") }
+                    if !editMode.isEditing {
+                        Menu {
+                            Button("Playlist erstellen", systemImage: "music.note.list") { showingPlaylistAlert = true }
+                            Button("Create Artist +", systemImage: "person.crop.circle.badge.plus") { showingArtistAlert = true }
+                        } label: { Image(systemName: "plus.circle.fill") }
+                    }
                 }
             }
             .toolbar {
@@ -386,18 +458,17 @@ struct PlaylistsView: View {
                             if selectedIDs.count == visiblePlaylists.count { selectedIDs.removeAll() }
                             else { selectedIDs = Set(visiblePlaylists.map(\.id)) }
                         }
-                    } else { EditButton() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if editMode.isEditing, !selectedIDs.isEmpty { Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText) }
-                }
-                ToolbarItem(placement: .bottomBar) {
-                    if editMode.isEditing {
-                        Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
-                            .disabled(selectedIDs.isEmpty)
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if editMode.isEditing, !selectedIDs.isEmpty {
+                        Button("Löschen", systemImage: "trash", role: .destructive) { showingDeleteConfirmation = true }
+                            .labelStyle(.iconOnly)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) { EditButton() }
             }
+            .environment(\.editMode, $editMode)
             .sheet(isPresented: $showingPlaylistAlert) { PlaylistEditorView() }
             .sheet(isPresented: $showingArtistAlert) { ArtistEditorView(createPlaylist: true) }
             .sheet(item: $editingPlaylist) { PlaylistEditorView(playlist: $0) }
@@ -610,16 +681,18 @@ struct PlaylistDetail: View {
     @State private var showingEditor = false
     @State private var showingClearSelection = false
     @State private var showingArtistEditor = false
+    @State private var artistTrackFilter = ArtistTrackFilter.all
 
     init(playlist: Playlist) { self.playlist = playlist; _songs = Query() }
 
     var body: some View {
         let isArtistPlaylist = !playlist.artistName.isEmpty
-        let displayedSongs = MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
+        let tracks = MusicCatalog.tracks(in: playlist, songs: songs, artists: artists)
+        let displayedSongs = isArtistPlaylist ? artistTrackFilter.tracks(in: tracks) : tracks
         List(selection: $selectedIDs) {
             Section {
                 HStack(spacing: 16) {
-                    PlaylistArtwork(playlist: playlist, fallbackData: displayedSongs.lazy.compactMap(\.artworkData).first, size: 112)
+                    PlaylistArtwork(playlist: playlist, fallbackData: tracks.lazy.compactMap(\.artworkData).first, size: 112)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(playlist.name).font(.title3.bold())
                         Text(L10n.count("%lld Titel", displayedSongs.count))
@@ -628,6 +701,9 @@ struct PlaylistDetail: View {
                     Spacer()
                 }
                 .padding(.vertical, 8)
+                if isArtistPlaylist {
+                    ArtistTrackFilterPicker(selection: $artistTrackFilter)
+                }
                 Button("Abspielen", systemImage: "play.fill") {
                     if let first = displayedSongs.first { player.play(first, in: displayedSongs) }
                 }
@@ -638,8 +714,16 @@ struct PlaylistDetail: View {
             }
             .listRowBackground(Color.clear)
             if isArtistPlaylist {
-                Section { ForEach(displayedSongs) { SongRow(song: $0, playbackCollection: displayedSongs) } } header: {
-                    Label("Alle Titel von \(playlist.artistName)", systemImage: "person.crop.circle")
+                if artistTrackFilter == .favorites && displayedSongs.isEmpty {
+                    ContentUnavailableView("Noch keine Favoriten", systemImage: "heart")
+                } else {
+                    Section {
+                        ForEach(displayedSongs) { SongRow(song: $0, playbackCollection: displayedSongs) }
+                    } header: {
+                        if artistTrackFilter == .all {
+                            Label("Alle Titel von \(playlist.artistName)", systemImage: "person.crop.circle")
+                        }
+                    }
                 }
             } else if displayedSongs.isEmpty {
                 ContentUnavailableView("Playlist ist leer", systemImage: "music.note.list", description: Text("Füge Titel über das Kontextmenü oder Bearbeiten hinzu."))
@@ -658,24 +742,24 @@ struct PlaylistDetail: View {
             }
         }
         .listStyle(.insetGrouped)
-        .environment(\.editMode, $editMode)
         .animation(.easeInOut(duration: 0.2), value: isArtistPlaylist ? [] : displayedSongs.map(\.id))
         .musicScreen()
         .navigationTitle(playlist.name)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                if !isArtistPlaylist, !displayedSongs.isEmpty {
-                    if editMode.isEditing {
-                        Button(LocalizedStringKey(selectedIDs.count == displayedSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
-                            if selectedIDs.count == displayedSongs.count { selectedIDs.removeAll() }
-                            else { selectedIDs = Set(displayedSongs.map(\.id)) }
-                        }
-                    } else { EditButton() }
+                if !isArtistPlaylist, !displayedSongs.isEmpty, editMode.isEditing {
+                    Button(LocalizedStringKey(selectedIDs.count == displayedSongs.count ? "Auswahl aufheben" : "Alle auswählen")) {
+                        if selectedIDs.count == displayedSongs.count { selectedIDs.removeAll() }
+                        else { selectedIDs = Set(displayedSongs.map(\.id)) }
+                    }
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if editMode.isEditing, !selectedIDs.isEmpty {
-                    Text("\(selectedIDs.count) ausgewählt").font(.caption).foregroundStyle(AppTheme.secondaryText)
+                if editMode.isEditing {
+                    if !selectedIDs.isEmpty {
+                        Button("Aus Playlist entfernen", systemImage: "minus.circle", role: .destructive) { showingClearSelection = true }
+                            .labelStyle(.iconOnly)
+                    }
                 } else {
                     Menu {
                         Button("Playlist und Cover bearbeiten", systemImage: "pencil") { showingEditor = true }
@@ -685,12 +769,11 @@ struct PlaylistDetail: View {
                     } label: { Label("Bearbeiten", systemImage: "pencil") }
                 }
             }
-            ToolbarItem(placement: .bottomBar) {
-                if editMode.isEditing, !selectedIDs.isEmpty {
-                    Button("Aus Playlist entfernen", systemImage: "minus.circle", role: .destructive) { showingClearSelection = true }
-                }
+            ToolbarItem(placement: .topBarTrailing) {
+                if !isArtistPlaylist, !displayedSongs.isEmpty || editMode.isEditing { EditButton() }
             }
         }
+        .environment(\.editMode, $editMode)
         .sheet(isPresented: $showingEditor) { PlaylistEditorView(playlist: playlist) }
         .sheet(isPresented: $showingArtistEditor) {
             if let profile = artistProfile { ArtistEditorView(artist: profile) }
@@ -868,6 +951,7 @@ struct SongRow: View {
     @State private var showingGenreEditor = false
     @State private var genreError: String?
     var body: some View {
+        let isCurrent = player.current?.id == song.id
         Button {
             if let playbackCollection { player.play(song, in: playbackCollection) }
             else { player.play(song) }
@@ -876,13 +960,13 @@ struct SongRow: View {
                 Artwork(data: song.artworkData).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(song.title).font(.body.weight(.medium))
-                        .foregroundStyle(player.current?.id == song.id ? AppTheme.accent : AppTheme.text)
+                        .foregroundStyle(isCurrent ? AppTheme.accent : AppTheme.text)
                         .lineLimit(2)
                     Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))")
-                        .font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
+                        .font(.subheadline).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                 }
                 Spacer(minLength: 4)
-                if player.current?.id == song.id {
+                if isCurrent {
                     Image(systemName: "waveform").foregroundStyle(AppTheme.accent).accessibilityHidden(true)
                 }
                 if song.isFavorite {
@@ -890,8 +974,9 @@ struct SongRow: View {
                 }
             }.frame(minHeight: 52).contentShape(Rectangle())
         }
-        .buttonStyle(.plain).padding(.vertical, 4)
-        .listRowBackground(AppTheme.surface)
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        .listRowBackground(isCurrent ? AppTheme.accentSurface.opacity(0.45) : Color.clear)
         .listRowSeparatorTint(AppTheme.separator)
         .modifier(TrackSwipeActions(song: song))
         .contextMenu {
@@ -962,11 +1047,11 @@ struct Artwork: View {
             } else {
                 Image(systemName: isPlaylistCover ? "music.note.list" : "music.note")
                     .font(.system(size: size * (isPlaylistCover ? 0.38 : 0.45), weight: isPlaylistCover ? .medium : .regular))
-                    .foregroundStyle(AppTheme.secondaryText)
+                    .foregroundStyle(AppTheme.accent.opacity(0.72))
             }
         }
         .frame(width: size, height: size)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: cornerRadius))
+        .background(AppTheme.accentSurface, in: RoundedRectangle(cornerRadius: cornerRadius))
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: Request(data: data, pixels: pixels), priority: .utility) {
             guard !Task.isCancelled else { return }
@@ -984,46 +1069,60 @@ struct MiniPlayer: View {
     let onOpen: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            MiniPlayerProgress(position: player.position)
-
-            HStack(spacing: 10) {
+        VStack(spacing: 1) {
+            HStack(spacing: 2) {
                 Button(action: onOpen) {
                     HStack(spacing: 10) {
-                        Artwork(data: player.current?.artworkData, size: 38)
+                        Artwork(data: player.current?.artworkData, size: 36)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(player.current?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1)
                             Text(MetadataText.artist(player.current?.artist ?? "")).font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(Text("\(player.current?.title ?? ""), \(MetadataText.artist(player.current?.artist ?? ""))"))
                 .accessibilityHint("Player öffnen")
 
                 Button { player.previous() } label: {
-                    Image(systemName: "backward.fill")
-                        .font(.subheadline.weight(.semibold)).frame(width: 40, height: 44)
+                    Image(systemName: "backward.end.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                    .accessibilityLabel("Vorheriger Titel")
+                .accessibilityLabel("Vorheriger Titel")
 
                 Button { player.toggle() } label: {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title3.weight(.semibold)).frame(width: 40, height: 44)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppTheme.onAccent)
+                        .frame(width: 32, height: 32)
+                        .background(AppTheme.accent, in: Circle())
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                    .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Wiedergabe"))
-                Button { player.next() } label: { Image(systemName: "forward.fill").frame(width: 40, height: 44) }
-                    .accessibilityLabel("Nächster Titel")
+                .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Abspielen"))
+
+                Button { player.next() } label: {
+                    Image(systemName: "forward.end.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Nächster Titel")
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+            .padding(.leading, 12)
+            .padding(.trailing, 6)
+
+            MiniPlayerProgress(position: player.position)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 62)
-        .clipped()
-        .modifier(MiniPlayerSurface())
+        .padding(.vertical, 3)
         .foregroundStyle(AppTheme.text)
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
@@ -1033,14 +1132,16 @@ private struct MiniPlayerProgress: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Rectangle().fill(.primary.opacity(0.10))
-                Rectangle()
-                    .fill(appTint.opacity(0.9))
+                Capsule().fill(AppTheme.separator)
+                Capsule()
+                    .fill(appTint)
                     .frame(width: proxy.size.width * position.fraction)
             }
         }
         .frame(height: 2)
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 24)
+        .offset(y: -2)
+        .accessibilityHidden(true)
     }
 }
 
@@ -1060,72 +1161,7 @@ struct NowPlayingView: View {
         NavigationStack {
             List(selection: $selectedQueueIDs) {
                 Section {
-                    VStack(spacing: 20) {
-                        Artwork(data: player.current?.artworkData, size: nowPlayingArtworkSize)
-                            .frame(maxWidth: .infinity)
-                        .shadow(color: .black.opacity(0.28), radius: 20, y: 12)
-                        .accessibilityHidden(true)
-                        if let song = player.current {
-                            HStack(alignment: .top, spacing: 12) {
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(song.title).font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
-                                    Text(MetadataText.artist(song.artist)).foregroundStyle(AppTheme.secondaryText)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contextMenu {
-                                    Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
-                                }
-                                Button { song.isFavorite.toggle() } label: {
-                                    Image(systemName: song.isFavorite ? "heart.fill" : "heart")
-                                        .font(.title2)
-                                        .foregroundStyle(song.isFavorite ? appTint : AppTheme.secondaryText)
-                                        .frame(width: 44, height: 44)
-                                        .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(LocalizedStringKey(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten"))
-                                .accessibilityAddTraits(song.isFavorite ? .isSelected : [])
-                            }
-                        }
-                        let songID = player.current?.id
-                        PlaybackPositionControl(position: player.position, duration: player.current?.duration ?? 0) { value in
-                            if player.current?.id == songID { player.seek(value) }
-                        }
-                        .id(songID)
-                        controls
-                        HStack(spacing: 12) {
-                            Image(systemName: "speaker.fill").accessibilityHidden(true)
-                            SystemVolumeControl().frame(height: 44).accessibilityLabel("Lautstärke")
-                            Image(systemName: "speaker.wave.3.fill").accessibilityHidden(true)
-                        }
-                        .foregroundStyle(AppTheme.secondaryText)
-                        HStack(spacing: 48) {
-                            Button { player.seekBy(-15) } label: {
-                                Image(systemName: "gobackward.15").font(.title2)
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .accessibilityLabel("15 Sekunden zurück")
-                            Button { player.seekBy(15) } label: {
-                                Image(systemName: "goforward.15").font(.title2)
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .accessibilityLabel("15 Sekunden vor")
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(player.current == nil)
-                        Button { showingSleepTimer = true } label: {
-                            HStack {
-                                Image(systemName: "moon.zzz")
-                                if let deadline = player.sleepDeadline {
-                                    Text(deadline, style: .timer).monospacedDigit()
-                                } else {
-                                    Text(LocalizedStringKey(player.sleepAfterCurrentSong ? "Stoppt nach diesem Titel" : "Sleep Timer"))
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                    .padding(.vertical, 18)
+                    playerPanel
                     .background {
                         NowPlayingSwipes(isEnabled: !editMode.isEditing && player.current != nil,
                                          onDismiss: { dismiss() },
@@ -1134,8 +1170,8 @@ struct NowPlayingView: View {
                     }
                 }
                 .listRowBackground(Color.clear)
-                .listRowSeparator(.visible)
-                .listRowSeparatorTint(AppTheme.separator)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 14, trailing: 12))
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Wird wiedergegeben: \(player.current?.title ?? String())")
                 if !player.queue.isEmpty {
@@ -1147,21 +1183,20 @@ struct NowPlayingView: View {
                         .onMove(perform: player.moveQueue)
                         .onDelete(perform: player.removeQueue)
                     } header: {
-                        HStack {
-                            Label("Als Nächstes · \(player.queue.count)", systemImage: "text.line.first.and.arrowtriangle.forward")
-                            Spacer()
-                            Button("Leeren", role: .destructive) { showingClearQueueConfirmation = true }
-                                .font(.subheadline.weight(.semibold))
-                        }
+                        queueHeader
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .listSectionSpacing(18)
             .environment(\.editMode, $editMode)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: player.queue.map(\.id))
+            .background {
+                RadialGradient(colors: [AppTheme.accentSurface.opacity(0.82), AppTheme.background],
+                               center: .top, startRadius: 0, endRadius: 540)
+                    .ignoresSafeArea()
+            }
             .musicScreen()
-            .scrollContentBackground(.hidden)
-            .background(AppTheme.header.ignoresSafeArea())
             .navigationTitle("Wiedergabe")
             .sheet(isPresented: $showingGenreEditor) {
                 if let song = player.current { SongGenreEditorView(song: song) }
@@ -1172,9 +1207,6 @@ struct NowPlayingView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Wiedergabeeinstellungen", systemImage: "slider.horizontal.3") { showingPlaybackSettings = true }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    if !player.queue.isEmpty { EditButton() }
                 }
                 ToolbarItem(placement: .topBarTrailing) { Button("Fertig") { dismiss() } }
                 ToolbarItem(placement: .bottomBar) {
@@ -1197,8 +1229,151 @@ struct NowPlayingView: View {
         }
     }
 
-    private var nowPlayingArtworkSize: CGFloat {
-        horizontalSizeClass == .regular ? 420 : 320
+    private var queueHeader: some View {
+        let title = Text("Als Nächstes · \(player.queue.count)").musicSectionHeading()
+        return ViewThatFits(in: .horizontal) {
+            HStack {
+                title.fixedSize(horizontal: true, vertical: false)
+                Spacer()
+                queueActions.fixedSize(horizontal: true, vertical: false)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                title
+                queueActions
+            }
+        }
+    }
+
+    private var queueActions: some View {
+        HStack(spacing: 14) {
+            EditButton()
+            Button("Leeren", role: .destructive) { showingClearQueueConfirmation = true }
+        }
+        .font(.subheadline.weight(.semibold))
+        .buttonStyle(.borderless)
+        .textCase(nil)
+    }
+
+    private var playerPanel: some View {
+        let songID = player.current?.id
+        return VStack(spacing: 18) {
+            GeometryReader { geometry in
+                Artwork(data: player.current?.artworkData, size: min(geometry.size.width, geometry.size.height))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .frame(maxWidth: horizontalSizeClass == .regular ? 380 : 326)
+            .shadow(color: .black.opacity(0.4), radius: 18, y: 10)
+            .accessibilityHidden(true)
+
+            if let song = player.current { trackDetails(song) }
+
+            VStack(spacing: 12) {
+                PlaybackPositionControl(position: player.position, duration: player.current?.duration ?? 0) { value in
+                    if player.current?.id == songID { player.seek(value) }
+                }
+                .id(songID)
+                controls
+            }
+
+            secondaryControls
+        }
+        .frame(maxWidth: 460)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func trackDetails(_ song: Song) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(song.title).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
+                Text(MetadataText.artist(song.artist))
+                    .font(.body).foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contextMenu {
+                Button("Genre bearbeiten", systemImage: "tag") { showingGenreEditor = true }
+            }
+
+            Button { song.isFavorite.toggle() } label: {
+                Image(systemName: song.isFavorite ? "heart.fill" : "heart")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(song.isFavorite ? appTint : AppTheme.secondaryText)
+                    .frame(width: 48, height: 48)
+                    .background(song.isFavorite ? AppTheme.accentSurface : AppTheme.surface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LocalizedStringKey(song.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten"))
+            .accessibilityAddTraits(song.isFavorite ? .isSelected : [])
+        }
+    }
+
+    private var secondaryControls: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "speaker.fill").accessibilityHidden(true)
+                SystemVolumeControl().frame(height: 44).accessibilityLabel("Lautstärke")
+                Image(systemName: "speaker.wave.3.fill").accessibilityHidden(true)
+            }
+            .font(.subheadline)
+            .foregroundStyle(AppTheme.secondaryText)
+            .padding(.horizontal, 14)
+
+            Rectangle().fill(AppTheme.separator).frame(height: 1).padding(.horizontal, 14)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    skipControls
+                    Spacer(minLength: 0)
+                    sleepTimerButton.fixedSize(horizontal: true, vertical: false)
+                }
+                VStack(spacing: 0) {
+                    skipControls
+                    sleepTimerButton
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .padding(.vertical, 3)
+        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private var skipControls: some View {
+        HStack(spacing: 4) {
+            Button { player.seekBy(-15) } label: {
+                Image(systemName: "gobackward.15").frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("15 Sekunden zurück")
+            Button { player.seekBy(15) } label: {
+                Image(systemName: "goforward.15").frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("15 Sekunden vor")
+        }
+        .font(.title3)
+        .buttonStyle(.plain)
+        .foregroundStyle(AppTheme.secondaryText)
+        .disabled(player.current == nil)
+    }
+
+    private var sleepTimerButton: some View {
+        Button { showingSleepTimer = true } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "moon.zzz")
+                if let deadline = player.sleepDeadline {
+                    Text(deadline, style: .timer).monospacedDigit()
+                } else {
+                    Text(LocalizedStringKey(player.sleepAfterCurrentSong ? "Stoppt nach diesem Titel" : "Sleep Timer"))
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(minHeight: 44)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(player.sleepDeadline != nil || player.sleepAfterCurrentSong ? appTint : AppTheme.secondaryText)
     }
 
     private var controls: some View {
@@ -1219,8 +1394,9 @@ struct NowPlayingView: View {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                     .font(.title.weight(.semibold)).foregroundStyle(AppTheme.onAccent)
                     .frame(width: 72, height: 72).background(appTint, in: Circle())
+                    .shadow(color: appTint.opacity(0.24), radius: 12, y: 4)
             }
-            .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Wiedergabe"))
+            .accessibilityLabel(LocalizedStringKey(player.isPlaying ? "Pause" : "Abspielen"))
             Spacer(minLength: 0)
             Button { player.next() } label: {
                 Image(systemName: "forward.end.fill").font(.title2).frame(minWidth: 44, minHeight: 44)
@@ -1337,7 +1513,7 @@ private struct PlaybackPositionControl: View {
 
     var body: some View {
         let elapsed = time((scrubbedPosition ?? position.fraction) * duration)
-        VStack(spacing: 20) {
+        VStack(spacing: 3) {
             Slider(value: Binding(get: { scrubbedPosition ?? position.fraction }, set: { value in
                 if scrubbedPosition != nil { scrubbedPosition = value }
                 else { seek(value) }
@@ -1356,7 +1532,7 @@ private struct PlaybackPositionControl: View {
                 Spacer()
                 Text(time(duration))
             }
-            .font(.caption)
+            .font(.caption.weight(.medium).monospacedDigit())
             .foregroundStyle(AppTheme.secondaryText)
         }
     }
@@ -1380,13 +1556,13 @@ struct QueueTrackRow: View {
                     Text("\(MetadataText.artist(song.artist)) · \(MetadataText.album(song.album))").font(.caption).foregroundStyle(AppTheme.secondaryText).lineLimit(1)
                 }
                 Spacer(minLength: 4)
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .padding(.vertical, 3)
+        .listRowBackground(AppTheme.surface)
+        .listRowSeparatorTint(AppTheme.separator)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button("Entfernen", systemImage: "trash", role: .destructive) { player.removeFromQueue(song) }
         }

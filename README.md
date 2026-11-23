@@ -1,12 +1,12 @@
-# jox
+# jox · Offline Music Player
 
 [![iOS 17+](https://img.shields.io/badge/iOS-17%2B-0a84ff)](https://developer.apple.com/ios/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange)](https://developer.apple.com/xcode/swiftui/)
 [![License: not yet selected](https://img.shields.io/badge/license-not%20yet%20selected-lightgrey)](#license)
 
-jox is a native offline music player for iPhone, built with SwiftUI,
-SwiftData and AVFoundation. Your library stays on the device: there is no
-account, analytics, public server or required internet connection.
+jox is a native offline music player for iPhone, built with SwiftUI, SwiftData
+and AVFoundation. Import your own music, organize it and listen offline. Your
+local library needs no account or internet connection.
 
 The repository also contains an optional local Mac Companion. It can convert
 and transfer audio files from a Mac to a paired iPhone over local HTTPS. The
@@ -15,8 +15,9 @@ firewall rules or a login item automatically.
 
 ## Documentation languages
 
-The full documentation is maintained in English. Short project summaries are
-available in [11 additional languages](README-translations/README.md):
+The app is localized in English and the 11 languages below. Choose a language
+in **Settings → Language** or follow the device language. The full documentation
+is in English. Short summaries are available in [11 additional languages](README-translations/README.md).
 
 | Language | Summary |
 | --- | --- |
@@ -34,41 +35,56 @@ available in [11 additional languages](README-translations/README.md):
 
 ## Features
 
-- Import individual audio files or complete folders from the iOS Files app
-- Recursive folder import with metadata and embedded artwork
-- Local storage in Application Support
-- Songs, albums, artists, search, favorites and playlists
-- Native mini-player, Now Playing screen and lock-screen controls
-- Background playback, Control Center, AirPods, Bluetooth and car audio
-- Shuffle, repeat, crossfade, gapless playback and a sleep timer
-- Genre and artist profiles with offline matching
-- Optional official YouTube search and preview using the user's own API key
-- Optional local Mac Companion for authorized files and automatic import
-- App language selection from Settings
-- Shared dark design system with a fresh green accent and native glass on iOS 26
-- Complete German and English UI, including plurals, errors and accessibility labels;
-  the existing additional language translations remain partial
+- **Offline library** with recursive folder import, metadata, embedded artwork,
+  artist and genre matching, and duplicate management.
+- **Favorites and playlists** with smart playlists and a favorites filter in
+  **Library → Artists** and on artist pages.
+- **Playback** with a mini-player, Now Playing, background audio, lock-screen
+  controls, Bluetooth, shuffle, repeat, crossfade, gapless playback and a sleep timer.
+- **Audio editing** with a waveform, precise in and out points, preview, undo
+  and redo. Keep a selected range or remove it and join the surrounding audio.
+- **Optional YouTube search and preview** using your own YouTube Data API key
+  and the official YouTube player. See [YouTube and Import](YOUTUBE_IMPORT.md).
+- **Optional Mac Companion** for pairing, converting and transferring authorized
+  audio from your Mac over local HTTPS.
 
-Design details, changed files and verification limits: [UI_DESIGN.md](UI_DESIGN.md).
+The dark interface uses mint accents, compact song rows and native glass on
+iOS 26. The mini-player uses the native tab accessory on iOS 26.1 and later.
+
+## Get started
+
+1. From **Home**, choose **YouTube & Import** or import a file or folder using
+   the add button. Playback and browsing work offline after import.
+2. Tap a song to play it. Open the mini-player for the full playback controls.
+3. Tap the heart to save a favorite. In **Library → Artists**, choose
+   **Favorites** to see your liked songs grouped by artist.
+
+### Edit a song
+
+In **Now Playing**, open **Playback Settings** with the sliders button and
+choose **Trim Audio**. Drag the two handles to mark the range. **Keep Selection**
+keeps that range, while **Remove Selection** cuts it out and joins the audio
+before and after it. Use **Preview the Join** to hear the transition.
+
+Under **Save**, choose **Create New Clip** to add a library entry or
+**Trim Original** to apply the edit to the existing entry. Playlists and
+favorites then use the edited version of that song.
 
 ## Requirements
 
-- macOS with Xcode 16 or later for the iOS app
-- iOS 17 or later
-- macOS 14 or later for the packaged Mac Companion
-- An Apple Developer account for installing the iOS app on a physical device
+- A Mac with Xcode 26.1 or later and the iOS SDK. See [Xcode system requirements](https://developer.apple.com/xcode/system-requirements/).
+- An iPhone running iOS 17 or later, or an installed iPhone simulator runtime.
+- For a physical iPhone, sign in to Xcode with an Apple Account and select a
+  signing team. See [Apple’s device setup instructions](https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices).
+- macOS 14 or later if you use the packaged Mac Companion.
 
 ## Build the iOS app
 
 1. Open `OfflineMusic.xcodeproj` in Xcode.
-2. Select the `OfflineMusic` target and choose your own Apple Developer Team
-   under **Signing & Capabilities**.
-3. Keep **Automatically manage signing** enabled.
-4. Choose a unique bundle identifier for your own installation.
-5. Select an iPhone or iOS Simulator and press **Run**.
-
-The project does not contain signing credentials. Xcode may require you to
-replace the bundle identifier with one registered to your developer account.
+2. Select the `OfflineMusic` scheme and an iPhone simulator, then press **Run**.
+3. To run on an iPhone, select your team in the target’s **Signing & Capabilities**,
+   enable **Automatically manage signing**, and use a bundle identifier available
+   to your team. Select the connected iPhone and press **Run**.
 
 ## Mac Companion
 
@@ -81,7 +97,7 @@ Companion ZIP: `arm64` for Apple silicon or `x86_64` for Intel. Setup details:
 - [Companion API and security details](COMPANION.md)
 - [Converter API](CONVERTER.md)
 
-For local development:
+For local development, create a Python environment and initialize the service.
 
 ```sh
 python3 -m venv .venv-companion
@@ -108,20 +124,21 @@ or `converter.py` entry point.
 
 ## Tests
 
-Python tests use temporary libraries and local test servers. They do not need
-real media downloads or a Google API key:
+The tests use temporary libraries, generated audio and local test servers. Install
+the Companion test dependencies before running the Python suites.
 
 ```sh
-python3 -m unittest discover -s Tests -p 'test_*.py' -v
-python3 Tests/run_mac_connection_tests.py
-python3 Tests/run_mac_import_tests.py
+python3 -m venv .venv-companion
+.venv-companion/bin/python -m pip install -r requirements-companion-test.txt
+.venv-companion/bin/python -m unittest discover -s Tests -p 'test_*.py' -v
+.venv-companion/bin/python Tests/run_mac_connection_tests.py
+.venv-companion/bin/python Tests/run_mac_import_tests.py
 python3 Tests/run_youtube_tests.py
 python3 Tests/run_swift_regressions.py
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/check_localization.py
 ```
 
-An Xcode build requires a full Xcode installation, not only the Command Line
-Tools:
+To build the app for the simulator with signing disabled, use full Xcode.
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
@@ -130,8 +147,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-See [QUALITY_CHECK.md](QUALITY_CHECK.md) for the latest test scope and the
-device-level checks that still require a real iPhone.
+The localization audit checks the compiled strings, plural variants and permission
+prompts in all 12 languages. See [QUALITY_CHECK.md](QUALITY_CHECK.md) for the
+recorded verification scope and physical-device checks.
 
 ## Repository layout
 

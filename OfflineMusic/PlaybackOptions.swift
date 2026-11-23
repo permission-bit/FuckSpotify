@@ -16,6 +16,7 @@ enum PlaybackTiming {
 struct PlaybackSettingsView: View {
     @EnvironmentObject private var player: AudioPlayer
     @Environment(\.dismiss) private var dismiss
+    @State private var trimSong: Song?
 
     var body: some View {
         NavigationStack {
@@ -34,12 +35,18 @@ struct PlaybackSettingsView: View {
                     Toggle("Lückenarme Wiedergabe", isOn: Binding(get: { player.gaplessEnabled }, set: player.setGaplessEnabled))
                         .disabled(player.crossfadeEnabled && player.crossfadeDuration > 0)
                 } footer: { Text("Bereitet den nächsten Titel vor und startet kompatible Dateien direkt im Anschluss. Verfügbare Encoderinformationen werden vom Audiodecoder berücksichtigt. Bei aktivem Crossfade werden Titel stattdessen überblendet.") }
+                if let song = player.current {
+                    Section {
+                        Button("Audio schneiden", systemImage: "scissors") { trimSong = song }
+                    }
+                }
                 }.listRowBackground(AppTheme.surface)
             }
             .musicScreen()
             .navigationTitle("Wiedergabeeinstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
+            .sheet(item: $trimSong) { AudioTrimView(song: $0) }
         }.musicScreen()
     }
 }

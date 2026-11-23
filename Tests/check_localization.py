@@ -18,6 +18,9 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG = "OfflineMusic/Localizable.xcstrings"
+PERMISSIONS = "OfflineMusic/InfoPlist.xcstrings"
+LANGUAGES = ("de", "en", "es", "fr", "it", "pt-BR", "nl", "pl", "tr", "ja", "ko", "zh-Hans")
+SINGLE_PLURAL_LANGUAGES = {"ja", "ko", "zh-Hans"}
 FORMAT = re.compile(r"%(?:(\d+)\$)?[-+#0 ']*(?:\d+|\*)?(?:\.(?:\d+|\*))?(hh|ll|h|l|L|z|t|j)?([@diuoxXfFeEgGaAcCsSp])")
 CONSUMER = re.compile(r"\b(Text|Label|Button|Section|Picker|Toggle|Menu|Link|ProgressView|TextField|LabeledContent|ContentUnavailableView|navigationTitle|accessibilityLabel|accessibilityHint|accessibilityValue|alert|confirmationDialog|searchable|LocalizedStringKey|L10n\.(?:text|format|count))\s*\(")
 GERMAN = re.compile(r"[äöüÄÖÜß]|\b(?:Die|Der|Das|Keine?|Nicht|Bitte|Titel|Datei|Dateien|Kopplung|Verbindung|erneut|werden|wurde|konnte|dein(?:e[msnr]?)?|ausgewählt|hinzugefügt|Sekunden|Minuten|fehlgeschlagen|gespeichert)\b")
@@ -133,6 +136,16 @@ def signature(value):
     return result
 
 
+def plural_case(language, count):
+    if language in SINGLE_PLURAL_LANGUAGES:
+        return "other"
+    if count == 1 or count == 0 and language in {"fr", "pt-BR"}:
+        return "one"
+    if language == "pl":
+        return "few" if 2 <= count % 10 <= 4 and not 12 <= count % 100 <= 14 else "many"
+    return "other"
+
+
 def argument_end(mask, start):
     depth = 0
     for position in range(start, len(mask)):
@@ -166,11 +179,11 @@ def validate_catalog(catalog, baseline):
     for key, entry in entries.items():
         if entry.get("shouldTranslate") is False:
             continue
-        for language in ("de", "en"):
+        for language in LANGUAGES:
             localization = entry.get("localizations", {}).get(language)
             if localization is None:
-                if language == "en" and any(char.isalpha() for char in key):
-                    errors.append(f"Missing English translation: {key!r}")
+                if language != "de" and any(char.isalpha() for char in FORMAT.sub("", key)):
+                    errors.append(f"Missing {language} translation: {key!r}")
                 continue  # German source-key fallback is intentional.
             leaves = list(units(localization))
             if not leaves:
@@ -179,17 +192,20 @@ def validate_catalog(catalog, baseline):
                 value = unit.get("value", "")
                 if not value and key:
                     errors.append(f"Empty value: {language} {key!r}")
-                if language == "en" and unit.get("state") != "translated":
-                    errors.append(f"Unfinished English translation: {key!r} {'/'.join(path)}")
+                if language != "de" and unit.get("state") != "translated":
+                    errors.append(f"Unfinished {language} translation: {key!r} {'/'.join(path)}")
                 # Substitutions contain fragments, not a complete format.
                 if "substitutions" not in path and signature(key) != signature(value):
                     errors.append(f"Format mismatch: {language} {key!r}: {signature(key)} != {signature(value)}")
-            for node_path, _ in leaves:
-                if "plural" in node_path:
-                    prefix = node_path[:node_path.index("plural") + 1]
-                    cases = {p[len(prefix)] for p, _ in leaves if p[:len(prefix)] == prefix}
-                    if not {"one", "other"} <= cases:
-                        errors.append(f"Missing one/other plural: {language} {key!r}")
+            plural = localization.get("variations", {}).get("plural", {})
+            if entry.get("localizations", {}).get("de", {}).get("variations", {}).get("plural"):
+                required = {"other"}
+                if language not in SINGLE_PLURAL_LANGUAGES:
+                    required.add("one")
+                if language == "pl":
+                    required.update(("few", "many"))
+                if not required <= plural.keys():
+                    errors.append(f"Missing plural variants {required - plural.keys()}: {language} {key!r}")
     print(f"Catalog: {len(entries)} keys; checked {preserved} original translated units against git baseline")
     return errors
 
@@ -275,7 +291,7 @@ def audit_extracted_strings(catalog, directory):
     return errors
 
 
-def runtime_checks(catalog, directory, environment):
+def runtime_checks(catalog, permissions, directory, environment):
     bundle = directory / "LocalizationChecks.app" / "Contents"
     resources, executable = bundle / "Resources", bundle / "MacOS" / "LocalizationChecks"
     resources.mkdir(parents=True)
@@ -283,7 +299,7 @@ def runtime_checks(catalog, directory, environment):
     (bundle / "Info.plist").write_bytes(plistlib.dumps({
         "CFBundleIdentifier": "test.offlinemusic.localization." + directory.name,
         "CFBundleExecutable": executable.name, "CFBundlePackageType": "APPL",
-        "CFBundleDevelopmentRegion": "de", "CFBundleLocalizations": ["de", "en"],
+        "CFBundleDevelopmentRegion": "de", "CFBundleLocalizations": list(LANGUAGES),
     }))
     # Snapshot inputs together so concurrent agent edits cannot alter half a run.
     snapshot = directory / "Localizable.xcstrings"
@@ -295,39 +311,39 @@ def runtime_checks(catalog, directory, environment):
     # implementation verbatim, leaving UIKit/SwiftUI surfaces out of this build.
     metadata = directory / "MetadataText.swift"
     metadata.write_text(theme[theme.index("enum MetadataText {"):theme.index("private struct MusicScreen:")])
+    language_options = [option for language in LANGUAGES for option in ("--language", language)]
     subprocess.run(["xcrun", "xcstringstool", "compile", str(snapshot), "--output-directory", str(resources),
-                    "--language", "de", "--language", "en"], env=environment, check=True, timeout=60)
-    permissions = json.loads((ROOT / "OfflineMusic/InfoPlist.xcstrings").read_text())
+                    *language_options], env=environment, check=True, timeout=60)
     permission_snapshot = directory / "InfoPlist.xcstrings"
     permission_snapshot.write_text(json.dumps(permissions, ensure_ascii=False))
     subprocess.run(["xcrun", "xcstringstool", "compile", str(permission_snapshot), "--output-directory", str(resources),
-                    "--language", "de", "--language", "en"], env=environment, check=True, timeout=60)
-    for language in ("de", "en"):
+                    *language_options], env=environment, check=True, timeout=60)
+    for language in LANGUAGES:
         if not (resources / f"{language}.lproj/Localizable.strings").is_file():
             raise RuntimeError(f"No compiled {language} strings")
         if not (resources / f"{language}.lproj/Localizable.stringsdict").is_file():
             raise RuntimeError(f"No compiled {language} plurals")
-    # Exhaustively test plain DE/EN lookups against their catalog values.
+    # Exercise every plain catalog lookup and representative integer plural in each language.
     cases = []
-    for key in ("NSCameraUsageDescription", "NSLocalNetworkUsageDescription"):
-        for language in ("de", "en"):
+    for key in permissions["strings"]:
+        for language in LANGUAGES:
             value = permissions["strings"][key]["localizations"][language]["stringUnit"]["value"]
             if not value:
                 raise RuntimeError(f"Empty permission description: {language} {key}")
             cases.append({"language": language, "key": key, "expected": value, "table": "InfoPlist"})
     for key, entry in catalog["strings"].items():
         if signature(key) == {1: "lld"}:
-            for language in ("de", "en"):
+            for language in LANGUAGES:
                 node = entry.get("localizations", {}).get(language, {})
                 plural = node.get("variations", {}).get("plural", {})
-                for count in (0, 1, 2, 21):
-                    form = plural.get("one" if count == 1 else "other", node)
+                for count in (0, 1, 2, 5, 12, 21, 22, 25):
+                    form = plural.get(plural_case(language, count), plural.get("other", node))
                     value = form.get("stringUnit", {}).get("value", key)
                     expected = FORMAT.sub(lambda match: str(count), value)
                     cases.append({"language": language, "key": key, "expected": expected, "count": count})
         if signature(key) or "%#@" in key:
             continue
-        for language in ("de", "en"):
+        for language in LANGUAGES:
             node = entry.get("localizations", {}).get(language, {})
             value = node.get("stringUnit", {}).get("value", key)
             if not node or "stringUnit" in node:
@@ -348,10 +364,11 @@ def main():
     parser.add_argument("--extracted-strings", type=Path, help="also audit Xcode-generated .stringsdata below this directory")
     arguments = parser.parse_args()
     catalog = json.loads((ROOT / CATALOG).read_text())
-    permissions = json.loads((ROOT / "OfflineMusic/InfoPlist.xcstrings").read_text())
+    permissions = json.loads((ROOT / PERMISSIONS).read_text())
     baseline = json.loads(subprocess.check_output(["git", "show", f"{arguments.baseline}:{CATALOG}"], cwd=ROOT, text=True))
+    permissions_baseline = json.loads(subprocess.check_output(["git", "show", f"{arguments.baseline}:{PERMISSIONS}"], cwd=ROOT, text=True))
     errors = validate_catalog(catalog, baseline)
-    errors.extend(validate_catalog(permissions, {"strings": {}}))
+    errors.extend(validate_catalog(permissions, permissions_baseline))
     source_errors, review = audit_sources(catalog)
     errors.extend(source_errors)
     if arguments.extracted_strings:
@@ -361,15 +378,16 @@ def main():
     for error in errors:
         print("FAIL:", error)
     print(f"Manual-review candidates: {len(review)} (use --report PATH for the full list)")
-    if not arguments.static_only:
+    if not arguments.static_only and not errors:
         with tempfile.TemporaryDirectory(prefix="localization-checks-") as temp:
             directory = Path(temp)
             environment = {**os.environ, "DEVELOPER_DIR": os.environ.get("DEVELOPER_DIR", "/Applications/Xcode.app/Contents/Developer"),
                            "CLANG_MODULE_CACHE_PATH": str(directory / "clang"), "SWIFT_MODULECACHE_PATH": str(directory / "swift")}
-            runtime_checks(catalog, directory, environment)
+            runtime_checks(catalog, permissions, directory, environment)
     if errors:
         raise SystemExit(1)
-    print("PASS: catalog integrity, translation preservation and static literal coverage" + ("; compiled DE/EN runtime" if not arguments.static_only else ""))
+    runtime_summary = f" and compiled runtime checks in {len(LANGUAGES)} languages" if not arguments.static_only else ""
+    print("PASS: catalog integrity, translation preservation, and static literal coverage" + runtime_summary)
 
 
 if __name__ == "__main__":

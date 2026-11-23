@@ -37,7 +37,8 @@ struct LocalizationChecks {
         }
         defer { UserDefaults.standard.setVolatileDomain(original, forName: domain) }
         let cases = try JSONDecoder().decode([Lookup].self, from: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1])))
-        for language in ["de", "en", "de"] {
+        let languages = Set(cases.map(\.language)).sorted()
+        for language in languages {
             select(language)
             for item in cases where item.language == language {
                 if let count = item.count {
@@ -128,6 +129,6 @@ struct LocalizationChecks {
             FileHandle.standardError.write(Data(report.utf8))
             exit(1)
         }
-        print("PASS: \(checks) compiled DE/EN localization assertions (plain lookups, plurals, errors, fallback, live switching)")
+        print("PASS: \(checks) compiled localization checks across \(languages.count) languages (lookups, plurals, errors, fallback, live switching)")
     }
 }

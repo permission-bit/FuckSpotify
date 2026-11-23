@@ -42,16 +42,21 @@ enum L10n {
         return Bundle(path: path)
     }
 
-    private static func translation(_ key: String) -> String {
-        // An explicit bundle prevents Foundation from using the device language
-        // instead of the in-app selection. German remains the source fallback.
-        let fallback = bundle(for: "de")?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
-        return bundle(for: languageCode)?.localizedString(forKey: key, value: fallback, table: "Localizable") ?? fallback
+    private static func translation(_ key: String) -> String? {
+        // An explicit bundle honors the app's language. The sentinel distinguishes
+        // a missing key from a valid translation identical to its source.
+        let missing = "\u{001F}"
+        func lookup(_ language: String) -> String? {
+            guard let value = bundle(for: language)?.localizedString(forKey: key, value: missing, table: "Localizable"),
+                  value != missing else { return nil }
+            return value
+        }
+        let language = languageCode
+        return lookup(language) ?? (language == "de" ? nil : lookup("de"))
     }
 
     static func text(_ key: String) -> String {
-        let translated = translation(key)
-        if translated != key { return translated }
+        if let translated = translation(key) { return translated }
         // Compatibility for legacy String interpolation. New UI code should use
         // format/count so substitutions remain unambiguous and extractable.
         for template in templates {
@@ -60,18 +65,18 @@ enum L10n {
             if values.count == 1, let count = Int(values[0]), template.isCount {
                 return self.count(template.key, count)
             }
-            return substitute(translation(template.key), values: values)
+            return substitute(translation(template.key) ?? template.key, values: values)
         }
         return key
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
-        String(format: translation(key), locale: locale, arguments: arguments)
+        String(format: translation(key) ?? key, locale: locale, arguments: arguments)
     }
 
     /// Use a catalog key with an Int64 plural substitution, e.g. "%lld Titel".
     static func count(_ key: String, _ count: Int) -> String {
-        String(format: translation(key), locale: locale, arguments: [Int64(count)])
+        String(format: translation(key) ?? key, locale: locale, arguments: [Int64(count)])
     }
 
     private struct Template {
@@ -194,10 +199,7 @@ struct AppSettingsView: View {
             } header: {
                 Text(L10n.text("Allgemein"))
             } footer: {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L10n.text("Die Sprache der App kann jederzeit geändert werden. Die Änderung wird sofort übernommen."))
-                    Text(L10n.text("Deutsch und Englisch sind vollständig übersetzt. Weitere Sprachen sind teilweise übersetzt."))
-                }
+                Text(L10n.text("Die Sprache der App kann jederzeit geändert werden. Die Änderung wird sofort übernommen."))
             }
         }
         .navigationTitle(L10n.text("Einstellungen"))

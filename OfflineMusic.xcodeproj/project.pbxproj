@@ -37,6 +37,7 @@
 		1A00000000000000000000B2 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000B3 /* Localizable.xcstrings */; };
 		1A00000000000000000000C0 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C1 /* AppTheme.swift */; };
 		1A00000000000000000000C2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C3 /* InfoPlist.xcstrings */; };
+		1A00000000000000000000C4 /* AudioTrim.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A00000000000000000000C5 /* AudioTrim.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,7 @@
 		1A00000000000000000000B3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		1A00000000000000000000C1 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		1A00000000000000000000C3 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		1A00000000000000000000C5 /* AudioTrim.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTrim.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -97,6 +99,7 @@
 			children = (
 				1A0000000000000000000020 /* OfflineMusicApp.swift */,
 				1A00000000000000000000C1 /* AppTheme.swift */,
+				1A00000000000000000000C5 /* AudioTrim.swift */,
 				1A00000000000000000000C3 /* InfoPlist.xcstrings */,
 				1A0000000000000000000021 /* Views.swift */,
 				1A0000000000000000000024 /* Assets.xcassets */,
@@ -215,6 +218,7 @@
 				1A0000000000000000000030 /* OfflineMusicApp.swift in Sources */,
 				1A00000000000000000000C0 /* AppTheme.swift in Sources */,
 				1A0000000000000000000031 /* Views.swift in Sources */,
+				1A00000000000000000000C4 /* AudioTrim.swift in Sources */,
 				1A0000000000000000000035 /* MusicCatalog.swift in Sources */,
 				1A0000000000000000000034 /* FolderImporter.swift in Sources */,
 				1A0000000000000000000036 /* LibraryManagement.swift in Sources */,

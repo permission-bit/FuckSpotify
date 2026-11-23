@@ -644,6 +644,28 @@ struct PlaybackSession: Codable, Equatable {
 
     func finishLibraryMutation() { historySuspended = false; refreshScheduledTransition() }
 
+    func reloadTrimmedSong(_ song: Song, editedTime: (TimeInterval) -> TimeInterval) {
+        synchronizeTransition()
+        guard current?.id == song.id else {
+            if scheduledTransition?.song.id == song.id { refreshScheduledTransition() }
+            return
+        }
+
+        _ = expireSleepTimerIfNeeded()
+        recordListening()
+        let history = listening
+        let offset = editedTime(audio?.currentTime ?? 0)
+        let elapsed = (0..<song.duration).contains(offset) ? offset : 0
+        if prepare(song, at: elapsed, shouldPlay: isPlaying) || prepare(song, at: elapsed, shouldPlay: false) {
+            listening = history
+        } else {
+            stop()
+            audio = nil
+            updateNowPlaying()
+        }
+        saveSessionNow()
+    }
+
     private func updateNowPlaying(updateMetadata: Bool = false) {
         guard let song = current else { return }
         let elapsed = audio?.currentTime ?? 0

@@ -296,6 +296,27 @@ MainActor.assumeIsolated {
         restored.finishLibraryMutation(); restored.drive(to: 311)
         precondition(kept.playCount == 4, "Replacing a duplicate must not count the same session twice")
     }
+    do {
+        let p = AudioPlayer.testPlayer(); defer { p.dispose() }
+        let track = Song(title: "Trimmed", duration: 100, fileName: "a.wav")
+        let next = Song(title: "Queued", duration: 100, fileName: "b.wav")
+        let filename = "trimmed.m4a"
+        try! Data([1]).write(to: LibraryStore.musicURL.appendingPathComponent(filename))
+        AVAudioPlayer.durations[filename] = 50
+        defer { AVAudioPlayer.durations.removeValue(forKey: filename) }
+        p.setLibrary([track, next]); p.play(track); p.addToQueue(next)
+        p.drive(to: 35)
+        track.fileName = filename
+        track.duration = 50
+        p.reloadTrimmedSong(track) { $0 - 5 }
+        precondition(p.isPlaying && p.current?.id == track.id && p.testAudio?.duration == 50 && p.testAudio?.currentTime == 30)
+        precondition(p.queue.map(\.id) == [next.id] && p.plannedID == next.id)
+        p.drive(to: 39)
+        precondition(track.playCount == 1, "Trimming must not count the current playback twice")
+        p.toggle()
+        p.reloadTrimmedSong(track) { $0 - 40 }
+        precondition(!p.isPlaying && p.testAudio?.currentTime == 0, "A paused position outside the cut restarts at the new beginning")
+    }
     precondition(PlaybackTiming.overlap(requested: 12, outgoing: 1, incoming: 100, remaining: 1) == 0.5)
     precondition(PlaybackTiming.overlap(requested: .nan, outgoing: 100, incoming: 100, remaining: 100) == 0)
     print("PASS: production transition scheduling, gapless/crossfade modes, short tracks, skips, queue edits, shuffle/repeat, sleep cancellation/expiry/fade, interruption resume and unplug pause")

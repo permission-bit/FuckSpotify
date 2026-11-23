@@ -123,7 +123,48 @@ try await Task { @MainActor in
     try await Importer.recoverInterruptedImports(context: context)
     let countAfterRetry = try context.fetchCount(FetchDescriptor<Song>())
     precondition(countAfterRetry == 2, "Recovery must not insert duplicate records")
-    print("PASS: persisted independent genres, restore, reference transfer, interrupted deletion recovery and idempotent import recovery")
+
+    let music = LibraryStore.musicURL
+    let shared = Song(title: "Another entry", duration: b.duration, fileName: b.fileName)
+    context.insert(shared)
+    let cut = music.appendingPathComponent("export.m4a")
+    try wave.write(to: cut)
+    try AudioTrimStore.replace(b, original: "b.mp3", with: cut, duration: 1, in: context)
+    let abridged = b.fileName
+    let reopened = ModelContext(container)
+    let shortened = try reopened.fetch(FetchDescriptor<Song>(predicate: #Predicate { $0.id == keptID })).first!
+    let savedPlaylist = try reopened.fetch(FetchDescriptor<Playlist>()).first!
+    let shortenedCount = try reopened.fetchCount(FetchDescriptor<Song>())
+    precondition(shortenedCount == 3 && shortened.fileName == abridged && shortened.duration == 1)
+    precondition(shortened.title == "Song" && shortened.isFavorite && shortened.playCount == 5 && savedPlaylist.songIDs == [keptID])
+    precondition(fm.fileExists(atPath: music.appendingPathComponent("b.mp3").path), "Shared files must survive a trim of one entry")
+    var failedMove = false
+    do {
+        try AudioTrimStore.replace(shared, original: "b.mp3", with: cut, duration: 1, in: context)
+    } catch { failedMove = true }
+    precondition(failedMove && shared.fileName == "b.mp3" && fm.fileExists(atPath: music.appendingPathComponent("b.mp3").path))
+    try wave.write(to: cut)
+    try AudioTrimStore.replace(shared, original: "b.mp3", with: cut, duration: 1, in: context)
+    precondition(!fm.fileExists(atPath: music.appendingPathComponent("b.mp3").path))
+
+    let receipts = music.appendingPathComponent(".audio-trims")
+    let interruptedFile = music.appendingPathComponent("trim-interrupted-b.m4a")
+    let interruptedReceipt = receipts.appendingPathComponent("interrupted.json")
+    func stageInterruptedTrim() throws {
+        try wave.write(to: interruptedFile)
+        let receipt = ["original": abridged, "replacement": interruptedFile.lastPathComponent]
+        try JSONEncoder().encode(receipt).write(to: interruptedReceipt)
+    }
+    try stageInterruptedTrim()
+    try AudioTrimStore.recover(in: context)
+    precondition(!fm.fileExists(atPath: interruptedFile.path) && fm.fileExists(atPath: music.appendingPathComponent(abridged).path))
+    try stageInterruptedTrim()
+    b.fileName = interruptedFile.lastPathComponent
+    try context.save()
+    try AudioTrimStore.recover(in: context)
+    precondition(fm.fileExists(atPath: interruptedFile.path) && !fm.fileExists(atPath: music.appendingPathComponent(abridged).path))
+    precondition(!fm.fileExists(atPath: interruptedReceipt.path))
+    print("PASS: persisted genres, duplicate and import recovery, replacement audio, shared files and interrupted trim recovery")
 }.value
 """#
 let process = Process()

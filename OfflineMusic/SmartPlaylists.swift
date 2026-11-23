@@ -78,6 +78,12 @@ struct SmartPlaylistDetail: View {
         .musicScreen()
         .navigationTitle(LocalizedStringKey(kind.title))
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if editMode.isEditing, !selectedIDs.isEmpty {
+                    Button("Aktionen · \(selectedIDs.count) ausgewählt", systemImage: "ellipsis.circle") { showingActions = true }
+                        .labelStyle(.iconOnly)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) { EditButton() }
             ToolbarItem(placement: .topBarLeading) {
                 if editMode.isEditing {
@@ -85,12 +91,6 @@ struct SmartPlaylistDetail: View {
                         if selectedIDs.count == songs.count { selectedIDs.removeAll() }
                         else { selectedIDs = Set(songs.map(\.id)) }
                     }
-                }
-            }
-            ToolbarItem(placement: .bottomBar) {
-                if editMode.isEditing {
-                    Button("Aktionen · \(selectedIDs.count) ausgewählt", systemImage: "ellipsis.circle") { showingActions = true }
-                        .disabled(selectedIDs.isEmpty)
                 }
             }
         }

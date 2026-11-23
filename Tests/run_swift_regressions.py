@@ -22,7 +22,12 @@ def main():
             print(f"Running {suite}", flush=True)
             subprocess.run(["xcrun", "swift", "Tests/" + suite], cwd=ROOT,
                            env=environment, check=True, timeout=240)
-        print(f"PASS: {len(SUITES)} Swift regression suites", flush=True)
+        print("Running check_audio_trim.swift", flush=True)
+        trim_tests = Path(directory) / "check_audio_trim"
+        subprocess.run(["xcrun", "swiftc", "OfflineMusic/AudioTrim.swift", "Tests/check_audio_trim.swift", "-o", str(trim_tests)],
+                       cwd=ROOT, env=environment, check=True, timeout=240)
+        subprocess.run([str(trim_tests)], cwd=ROOT, env=environment, check=True, timeout=60)
+        print(f"PASS: {len(SUITES) + 1} Swift regression suites", flush=True)
 
 
 if __name__ == "__main__":

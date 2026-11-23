@@ -44,7 +44,7 @@ struct MacQRCodeScanner: View {
                 }
                 guard !Task.isCancelled else { return }
                 guard allowed, DataScannerViewController.isAvailable else {
-                    message = "Erlaube Offline Music den Kamerazugriff in den iPhone-Einstellungen. Auch eine Bildschirmzeit-Beschränkung kann die Kamera sperren."
+                    message = "Erlaube jox den Kamerazugriff in den iPhone-Einstellungen. Auch eine Bildschirmzeit-Beschränkung kann die Kamera sperren."
                     return
                 }
                 cameraAllowed = true

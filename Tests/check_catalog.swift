@@ -40,6 +40,22 @@ try MainActor.assumeIsolated {
     MusicCatalog.classify(collaboration, artists: artists)
     precondition(collaboration.artistIDs.count == 2 && collaboration.genreIDs == [hiphop.id])
 
+    let extraFavorites = (1...6).map { index in
+        let song = Song(title: "Favorite \(index)", artist: "Eminem", fileName: "favorite-\(index).mp3")
+        song.isFavorite = true
+        return song
+    }
+    file.isFavorite = true
+    collaboration.isFavorite = true
+    let eminemPlaylist = Playlist(name: "Eminem", artistName: eminem.name)
+    let artistTracks = MusicCatalog.tracks(in: eminemPlaylist, songs: [tagged, file, collaboration] + extraFavorites, artists: artists)
+    precondition(ArtistTrackFilter.all.tracks(in: artistTracks).map(\.id) == ([tagged, collaboration] + extraFavorites).map(\.id))
+    precondition(ArtistTrackFilter.favorites.tracks(in: artistTracks).map(\.id) == ([collaboration] + extraFavorites).map(\.id))
+    collaboration.isFavorite = false
+    tagged.isFavorite = true
+    precondition(ArtistTrackFilter.favorites.tracks(in: artistTracks).map(\.id) == ([tagged] + extraFavorites).map(\.id))
+    precondition(ArtistTrackFilter.favorites.tracks(in: [collaboration]).isEmpty)
+
     let uploader = Song(title: "ACDC - Thunderstruck", artist: "Music Channel", fileName: "track.mp3")
     MusicCatalog.classify(uploader, artists: artists)
     precondition(!uploader.artistIDs.isEmpty)
@@ -84,7 +100,7 @@ try MainActor.assumeIsolated {
     let savedGenres = try context.fetch(FetchDescriptor<MusicGenre>())
     precondition(savedArtists.count == artists.count + 1)
     precondition(savedGenres.count == genres.count + 1)
-    print("PASS: catalog seeding, normalization, configurable match fields, playlist membership/order, aliases, custom genres and reclassification")
+    print("PASS: catalog seeding, normalization, configurable match fields, playlist membership/order, artist favorites, aliases, custom genres and reclassification")
 }
 
 @MainActor func checkArtistWrites() async throws {

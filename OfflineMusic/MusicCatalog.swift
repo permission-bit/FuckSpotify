@@ -325,6 +325,17 @@ enum MusicCatalog {
     }
 }
 
+enum ArtistTrackFilter {
+    case all, favorites
+
+    func tracks(in songs: [Song]) -> [Song] {
+        switch self {
+        case .all: return songs
+        case .favorites: return songs.filter(\.isFavorite)
+        }
+    }
+}
+
 struct GenreLibraryView: View {
     @Query(sort: \MusicGenre.name) private var genres: [MusicGenre]
     @Query private var artists: [ArtistProfile]
@@ -416,18 +427,33 @@ struct GenreDetailView: View {
     }
 }
 
+struct ArtistTrackFilterPicker: View {
+    @Binding var selection: ArtistTrackFilter
+
+    var body: some View {
+        MusicFilterPicker(title: "Titel anzeigen", options: [(.all, "Alle Titel"), (.favorites, "Favoriten")], selection: $selection)
+    }
+}
+
 struct CatalogArtistView: View {
     let artist: ArtistProfile
     @Query(sort: \Song.title) private var songs: [Song]
     @State private var editing = false
+    @State private var trackFilter = ArtistTrackFilter.all
 
     var body: some View {
+        let tracks = trackFilter.tracks(in: songs.filter { $0.artistIDs.contains(artist.id) })
         List {
-            let tracks = songs.filter { $0.artistIDs.contains(artist.id) }
+            ArtistTrackFilterPicker(selection: $trackFilter)
+                .listRowBackground(Color.clear)
             if tracks.isEmpty {
-                ContentUnavailableView("Noch keine Titel", systemImage: "music.note", description: Text("Passende importierte Songs erscheinen hier automatisch."))
+                if trackFilter == .favorites {
+                    ContentUnavailableView("Noch keine Favoriten", systemImage: "heart")
+                } else {
+                    ContentUnavailableView("Noch keine Titel", systemImage: "music.note", description: Text("Passende importierte Songs erscheinen hier automatisch."))
+                }
             } else {
-                ForEach(tracks) { SongRow(song: $0) }.listRowBackground(AppTheme.surface)
+                ForEach(tracks) { SongRow(song: $0, playbackCollection: trackFilter == .favorites ? tracks : nil) }
             }
         }
         .listStyle(.insetGrouped)
