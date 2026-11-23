@@ -37,4 +37,15 @@ precondition(second.isPlaying && second.currentTime > 0, "The scheduled successo
 second.setVolume(0, fadeDuration: 0.1)
 RunLoop.current.run(until: Date().addingTimeInterval(0.15))
 precondition(second.volume < 0.01, "Native fading must reach silence")
-print("PASS: native PCM decoding, compatible formats, shared device-clock successor scheduling and native volume fade (macOS)")
+
+let loop = try AVAudioPlayer(contentsOf: firstURL)
+defer { loop.stop() }
+precondition(loop.play())
+RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+loop.numberOfLoops = -1
+RunLoop.current.run(until: Date().addingTimeInterval(0.55))
+precondition(loop.isPlaying, "Enabling Repeat One during playback must keep the decoder playing at the boundary")
+loop.numberOfLoops = 0
+RunLoop.current.run(until: Date().addingTimeInterval(0.65))
+precondition(!loop.isPlaying, "Disabling Repeat One must let the decoder finish")
+print("PASS: native PCM decoding, shared device-clock scheduling, volume fade and live loop switching (macOS)")

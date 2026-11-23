@@ -207,6 +207,18 @@ struct PlaybackSession: Codable, Equatable {
         return contextSongIDs.compactMap { lookup[$0] }
     }
 
+    private func upcomingSongs() -> [Song] {
+        let scopedSongs = playbackSongs
+        let tracks = scopedSongs.isEmpty ? library : scopedSongs
+        guard let index = tracks.firstIndex(where: { $0.id == current?.id }) else {
+            return shuffle ? tracks.shuffled() : tracks
+        }
+        if shuffle {
+            return tracks.filter { $0.id != tracks[index].id }.shuffled() + [tracks[index]]
+        }
+        return Array(tracks.dropFirst(index + 1)) + tracks.prefix(index + 1)
+    }
+
     private override init() {
         pendingSession = Self.loadSession()
         super.init()
@@ -387,8 +399,9 @@ struct PlaybackSession: Codable, Equatable {
     }
 
     func cycleRepeatMode() {
-        synchronizeTransition()
-        repeatMode = (repeatMode + 1) % 2
+        cancelScheduledTransition()
+        recordListening()
+        repeatMode = repeatMode == 1 ? 0 : 1
         updateLoopMode()
         saveSessionNow()
     }
@@ -404,13 +417,12 @@ struct PlaybackSession: Codable, Equatable {
                 return
             }
         }
-        let tracks = playbackSongs
-        guard !tracks.isEmpty else { return }
-        let index = tracks.firstIndex { $0.id == current?.id } ?? -1
-        let candidates = shuffle ? tracks.shuffled() : Array(tracks.dropFirst(index + 1))
-        for song in candidates where prepare(song, at: 0, shouldPlay: true) { saveSessionNow(); return }
-        if !isPlaying || audio?.isPlaying == false { stop() }
-        saveSessionNow()
+        for song in upcomingSongs() where prepare(song, at: 0, shouldPlay: true) {
+            saveSessionNow()
+            return
+        }
+        if audio?.isPlaying == true { saveSessionNow() }
+        else { stop() }
     }
 
     func previous(restartCurrent: Bool = true) {
@@ -500,28 +512,23 @@ struct PlaybackSession: Codable, Equatable {
             refreshScheduledTransition()
             return
         }
-        if let transition = scheduledTransition, player === audio {
-            if expireSleepTimerIfNeeded() { return }
+        guard player === audio, isPlaying, !expireSleepTimerIfNeeded() else { return }
+        if flag, repeatMode == 0, let transition = scheduledTransition {
             synchronizeTransition(force: true)
             if audio === transition.player { return }
         }
-        guard player === audio else { return }
+        cancelScheduledTransition()
         recordListening()
-        if expireSleepTimerIfNeeded() { return }
         if sleepAfterCurrentSong {
             stop()
             cancelSleepTimer()
             return
         }
-        if repeatMode == 1, let current { _ = prepare(current, at: 0, shouldPlay: true); saveSessionNow() }
-        else if !queue.isEmpty || playbackSongs.last?.id != current?.id || shuffle { next() }
-        else {
-            player.currentTime = 0
-            isPlaying = false
-            timer?.invalidate()
-            updateNowPlaying()
+        if flag, repeatMode == 1, let current, prepare(current, at: 0, shouldPlay: true) {
             saveSessionNow()
+            return
         }
+        next()
     }
 
     private func configureSession(activate: Bool = false) {
@@ -533,27 +540,28 @@ struct PlaybackSession: Codable, Equatable {
     @discardableResult
     private func prepare(_ song: Song, at position: TimeInterval, shouldPlay: Bool) -> Bool {
         let url = LibraryStore.musicURL.appendingPathComponent(song.fileName)
-        guard FileManager.default.fileExists(atPath: url.path), let player = try? AVAudioPlayer(contentsOf: url) else { return false }
+        guard FileManager.default.fileExists(atPath: url.path), let player = try? AVAudioPlayer(contentsOf: url),
+              player.duration.isFinite, player.duration > 0 else { return false }
+        player.currentTime = min(max(0, position), player.duration)
+        player.numberOfLoops = nativeRepeatCount
+        if sleepFadeEnabled, let deadline = sleepDeadline { player.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
         let willPlay = shouldPlay && !interruptionInProgress
+        recordListening()
         if willPlay {
             configureSession(activate: true)
-            guard player.prepareToPlay() else { return false }
+            guard player.prepareToPlay(), player.play() else { return false }
         }
-        recordListening()
         cancelScheduledTransition()
         stopOutgoingAudio()
         audio?.stop()
         player.delegate = self
-        player.currentTime = min(max(0, position), player.duration)
         audio = player
         current = song
         listening = PlaybackHistoryProgress(songID: song.id)
         resetListeningBaseline()
         currentIndex = library.firstIndex(where: { $0.id == song.id }) ?? currentIndex
-        updateLoopMode()
         sleepFading = false
-        if sleepFadeEnabled, let deadline = sleepDeadline { player.volume = PlaybackTiming.sleepGain(deadline: deadline, now: Date(), fadeDuration: 5) }
-        isPlaying = willPlay && player.play()
+        isPlaying = willPlay
         startTimer()
         updateNowPlaying(updateMetadata: true)
         armSleepTimer()
@@ -695,7 +703,7 @@ struct PlaybackSession: Codable, Equatable {
         guard !didAttemptSessionRestore, !library.isEmpty, let session = pendingSession else { return }
         didAttemptSessionRestore = true
         shuffle = session.shuffle
-        repeatMode = session.repeatMode
+        repeatMode = session.repeatMode == 1 ? 1 : 0
         let lookup = Dictionary(uniqueKeysWithValues: library.map { ($0.id, $0) })
         var seen = Set<UUID>()
         queue = session.queueSongIDs.compactMap { id in
@@ -774,9 +782,13 @@ struct PlaybackSession: Codable, Equatable {
         refreshScheduledTransition()
     }
 
-    private func updateLoopMode() {
+    private var nativeRepeatCount: Int {
         // Decoder-native looping preserves supported encoder trim information.
-        audio?.numberOfLoops = repeatMode == 1 && !sleepAfterCurrentSong ? -1 : 0
+        repeatMode == 1 && !sleepAfterCurrentSong ? -1 : 0
+    }
+
+    private func updateLoopMode() {
+        audio?.numberOfLoops = nativeRepeatCount
     }
 
     private func cancelScheduledTransition() {
@@ -803,19 +815,13 @@ struct PlaybackSession: Codable, Equatable {
               !sleepAfterCurrentSong, !sleepFading, repeatMode == 0 else { return }
         let remaining = max(0, source.duration - source.currentTime)
         guard remaining > 0.05 else { return }
-        let candidates: [Song]
         let fromQueue = !queue.isEmpty
-        if fromQueue { candidates = queue }
-        else if shuffle { candidates = playbackSongs.filter { $0.id != current?.id }.shuffled() }
-        else {
-            let tracks = playbackSongs
-            let index = tracks.firstIndex { $0.id == current?.id } ?? -1
-            candidates = Array(tracks.dropFirst(index + 1))
-        }
+        let candidates = fromQueue ? queue : upcomingSongs()
         for song in candidates {
             let url = LibraryStore.musicURL.appendingPathComponent(song.fileName)
             guard let successor = try? AVAudioPlayer(contentsOf: url), successor.prepareToPlay(), successor.duration > 0 else { continue }
-            let overlap = PlaybackTiming.overlap(requested: crossfadeEnabled ? crossfadeDuration : 0, outgoing: source.duration, incoming: successor.duration, remaining: remaining)
+            let requestedOverlap = crossfadeEnabled && song.id != current?.id ? crossfadeDuration : 0
+            let overlap = PlaybackTiming.overlap(requested: requestedOverlap, outgoing: source.duration, incoming: successor.duration, remaining: remaining)
             let compatible = abs(source.format.sampleRate - successor.format.sampleRate) < 0.01 && source.format.channelCount == successor.format.channelCount
             guard overlap > 0 || (gaplessEnabled && compatible) else { return }
             let delay = remaining - overlap

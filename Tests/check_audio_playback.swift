@@ -67,9 +67,11 @@ struct TestFormat { var sampleRate = 44100.0; var channelCount = 2 }
     static var clock = 0.0
     static var durations: [String: Double] = [:]
     static var formats: [String: TestFormat] = [:]
+    static var refusedStarts: Set<String> = []
     weak var delegate: AVAudioPlayerDelegate?
     let duration: Double
     let format: TestFormat
+    private let fileName: String
     var numberOfLoops = 0
     var volume: Float = 1
     var lastFade: (Float, Double)?
@@ -87,11 +89,13 @@ struct TestFormat { var sampleRate = 44100.0; var channelCount = 2 }
     var isPlaying: Bool { active && Self.clock >= startedAt && (numberOfLoops == -1 || currentTime < duration) }
     init(contentsOf url: URL) throws {
         guard FileManager.default.fileExists(atPath: url.path) else { throw CocoaError(.fileNoSuchFile) }
-        duration = Self.durations[url.lastPathComponent] ?? 100
-        format = Self.formats[url.lastPathComponent] ?? TestFormat()
+        fileName = url.lastPathComponent
+        duration = Self.durations[fileName] ?? 100
+        format = Self.formats[fileName] ?? TestFormat()
     }
     func prepareToPlay() -> Bool { true }
     @discardableResult func play() -> Bool {
+        guard !Self.refusedStarts.contains(fileName) else { return false }
         if currentTime >= duration { position = 0 }
         active = true; startedAt = Self.clock; return true
     }
@@ -113,6 +117,7 @@ extension AudioPlayer {
     }
     static func restoredTestPlayer() -> AudioPlayer { AudioPlayer() }
     var plannedID: UUID? { scheduledTransition?.song.id }
+    var plannedAudio: AVAudioPlayer? { scheduledTransition?.player }
     var plannedTime: Double? { scheduledTransition?.startsAt }
     var plannedOverlap: Double? { scheduledTransition?.overlap }
     var testAudio: AVAudioPlayer? { audio }
@@ -179,6 +184,44 @@ MainActor.assumeIsolated {
         p.previous(restartCurrent: false); precondition(p.current?.id == songs[1].id)
         p.toggle(); precondition(!p.isPlaying && p.plannedID == nil)
         p.toggle(); precondition(p.isPlaying && p.plannedID == songs[2].id)
+    }
+    do {
+        let p = AudioPlayer.testPlayer(); defer { p.dispose() }
+        let collection = [songs[2], songs[1]]
+        p.setLibrary(songs)
+        p.play(songs[1], in: collection)
+        precondition(p.plannedID == songs[2].id && p.plannedTime == 100)
+        p.drive(to: 100)
+        precondition(p.isPlaying && p.current?.id == songs[2].id, "Gapless playback must wrap within the playlist")
+        p.next(); p.next()
+        precondition(p.isPlaying && p.current?.id == songs[2].id, "Next must wrap within the playlist")
+        p.setGaplessEnabled(false)
+        p.next(); p.finish()
+        precondition(p.isPlaying && p.current?.id == songs[2].id, "The completion callback must also wrap within the playlist")
+        p.play(songs[2]); p.finish()
+        precondition(p.isPlaying && p.current?.id == songs[0].id, "Unscoped playback must wrap to the first library track")
+        AVAudioPlayer.refusedStarts.insert("a.wav")
+        defer { AVAudioPlayer.refusedStarts.remove("a.wav") }
+        p.play(songs[2]); p.next()
+        precondition(p.isPlaying && p.current?.id == songs[1].id, "Next must skip a decoder that fails to start")
+    }
+    do {
+        let p = AudioPlayer.testPlayer(); defer { p.dispose() }
+        p.setLibrary(songs); p.play(songs[0]); p.addToQueue(songs[2])
+        let queuedAudio = p.plannedAudio!
+        // The audio clock can reach the handoff before the UI updates the displayed track.
+        AVAudioPlayer.clock = 100
+        p.cycleRepeatMode()
+        precondition(!queuedAudio.active && p.plannedID == nil && p.current?.id == songs[0].id)
+        p.drive(to: 110)
+        precondition(p.isPlaying && p.testAudio?.numberOfLoops == -1 && p.testAudio?.currentTime == 10)
+        p.finish()
+        precondition(p.isPlaying && p.current?.id == songs[0].id && p.testAudio?.currentTime == 0)
+        precondition(p.queue.map(\.id) == [songs[2].id], "Repeating the current track must preserve the queue")
+        p.next()
+        precondition(p.isPlaying && p.current?.id == songs[2].id && p.queue.isEmpty && p.testAudio?.numberOfLoops == -1)
+        p.cycleRepeatMode()
+        precondition(p.testAudio?.numberOfLoops == 0 && p.plannedID == songs[0].id)
     }
     do {
         let p = AudioPlayer.testPlayer(); defer { p.dispose() }

@@ -1409,7 +1409,7 @@ struct NowPlayingView: View {
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Titel wiederholen")
-            .accessibilityValue(LocalizedStringKey(player.repeatMode == 0 ? "Aus" : player.repeatMode == 1 ? "Ein Titel" : "Alle Titel"))
+            .accessibilityValue(LocalizedStringKey(player.repeatMode == 1 ? "Ein Titel" : "Alle Titel"))
         }
         .buttonStyle(.plain)
     }

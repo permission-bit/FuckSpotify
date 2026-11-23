@@ -15,7 +15,7 @@ firewall rules or a login item automatically.
 
 ## Demo
 
-<img src="design/jox_demo.gif" alt="Screen recording of the jox iPhone app" width="300">
+<img src="design/jox_demo.gif" alt="jox demo showing music playback, audio trimming, playlists, and duplicate management on iPhone" width="300">
 
 ## Documentation languages
 
@@ -44,7 +44,9 @@ is in English. Short summaries are available in [11 additional languages](README
 - **Favorites and playlists** with smart playlists and a favorites filter in
   **Library → Artists** and on artist pages.
 - **Playback** with a mini-player, Now Playing, background audio, lock-screen
-  controls, Bluetooth, shuffle, repeat, crossfade, gapless playback and a sleep timer.
+  controls, Bluetooth, shuffle, crossfade, gapless playback and a sleep timer.
+  Playback wraps to the first track at the end of the list. **Repeat One**
+  loops the current track, and **Next** still advances.
 - **Audio editing** with a waveform, precise in and out points, preview, undo
   and redo. Keep a selected range or remove it and join the surrounding audio.
 - **Optional YouTube search and preview** using your own YouTube Data API key
