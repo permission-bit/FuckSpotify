@@ -13,6 +13,10 @@ and transfer audio files from a Mac to a paired iPhone over local HTTPS. The
 Companion is not a public server and does not configure port forwarding,
 firewall rules or a login item automatically.
 
+## Demo
+
+<img src="design/jox_demo.gif" alt="Screen recording of the jox iPhone app" width="300">
+
 ## Documentation languages
 
 The app is localized in English and the 11 languages below. Choose a language
