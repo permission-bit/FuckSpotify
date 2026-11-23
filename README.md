@@ -1,204 +1,88 @@
-# jox · Offline Music Player
+# jox
 
-[![iOS 17+](https://img.shields.io/badge/iOS-17%2B-0a84ff)](https://developer.apple.com/ios/)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange)](https://developer.apple.com/xcode/swiftui/)
-[![License: not yet selected](https://img.shields.io/badge/license-not%20yet%20selected-lightgrey)](#license)
+A local music player for iPhone. Bring your own audio files, build playlists from your favorites, and cut an intro or a section out of the middle of a track right from Now Playing. Once your music is imported, you can listen offline without an account.
 
-jox is a native offline music player for iPhone, built with SwiftUI, SwiftData
-and AVFoundation. Import your own music, organize it and listen offline. Your
-local library needs no account or internet connection.
+**iOS 17+** · **SwiftUI** · **12 app languages**
 
-The repository also contains an optional local Mac Companion. It can convert
-and transfer audio files from a Mac to a paired iPhone over local HTTPS. The
-Companion is not a public server and does not configure port forwarding,
-firewall rules or a login item automatically.
+[Install on iPhone](#install-on-iphone) · [Import music](#import-and-play) · [Prepare MP3s on your Mac](#prepare-mp3s-on-your-mac) · [Mac Companion](#mac-companion)
 
-## Demo
+<p align="center">
+  <img src="design/jox_demo.gif" alt="jox on iPhone showing the library, waveform editor, playlists, and duplicate review" width="300">
+</p>
 
-<img src="design/jox_demo.gif" alt="jox demo showing music playback, audio trimming, playlists, and duplicate management on iPhone" width="300">
+## Install on iPhone
 
-## Documentation languages
+Build jox from source with **Xcode 26.1 or later** on a Mac.
 
-The app is localized in English and the 11 languages below. Choose a language
-in **Settings → Language** or follow the device language. The full documentation
-is in English. Short summaries are available in [11 additional languages](README-translations/README.md).
+```sh
+git clone https://github.com/permission-bit/FuckSpotify.git
+cd FuckSpotify
+open OfflineMusic.xcodeproj
+```
 
-| Language | Summary |
+1. Connect and unlock your iPhone. Accept the trust prompt if it appears, then sign in under **Xcode → Settings → Apple Accounts**.
+2. In the **OfflineMusic** target, open **Signing & Capabilities**. Enable **Automatically manage signing**, select your team, and enter a unique bundle identifier, such as `com.yourname.jox`.
+3. Select the **OfflineMusic** scheme and your iPhone as the run destination. If prompted, enable **Settings → Privacy & Security → Developer Mode** on the iPhone and confirm after it restarts.
+4. Press **⌘R** to build and install. You can also select an iPhone simulator to try the app on your Mac.
+
+[Apple’s Xcode installation and signing guide](https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices) · [Developer Mode](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device)
+
+## Import and play
+
+1. Make your audio available in the iPhone’s **Files** app. AirDrop individual files or put a folder in iCloud Drive.
+2. In jox, open **Home → + → Import files** or **Import folder**. Folder import includes subfolders, and embedded tags and artwork carry over when available.
+3. Tap a song to play it. Tap the mini-player to open **Now Playing**, or use the lock-screen controls. Heart a track, then open **Library → Artists → Favorites** to browse liked songs by artist.
+
+## What you can do with jox
+
+- **Organize your collection.** Browse songs, albums, artists, and genres. Build playlists by hand or use smart playlists for favorites, recently added, recently played, most played, and never played. Review suspected duplicates and preview each version before deciding what to keep.
+- **Keep the music going.** Queue a song with **Play Next**, turn on shuffle, or set a sleep timer. Playback loops back to the start of the list, and **Repeat One** loops the current track. Gapless playback and adjustable crossfade are available in playback settings.
+- **Edit a track while you’re listening.** Open **Now Playing → sliders button → Trim Audio**. Drag the waveform handles and choose **Keep Selection** to make a clip or **Remove selection** to cut a section and join the audio on either side. Preview the edit, fine-tune it, or use undo and redo. Save as **Create New Clip** or choose **Trim Original** to update the existing library entry.
+- **Preview YouTube links.** Open **Home → YouTube & Import** to preview public videos or playlists in the official player. To search from jox, add your own YouTube Data API v3 key in the import screen’s settings. [YouTube setup and import guide](YOUTUBE_IMPORT.md)
+
+Choose the app language under **Settings → Language**. [Translated project summaries](README-translations/README.md)
+
+## Prepare MP3s on your Mac
+
+[`download.py`](download.py) is a separate terminal tool for YouTube recordings you have permission to download. It converts one item at a time to MP3, with tags and cover art when available. If your music is already in Files, you can go straight to [Import and play](#import-and-play).
+
+With Homebrew installed, run these commands from the repository folder. [Homebrew package details](https://formulae.brew.sh/formula/yt-dlp)
+
+```sh
+brew install yt-dlp ffmpeg
+nice -n 10 python3 download.py
+```
+
+Enter a video URL, a playlist URL, or the path to a text file with one video URL per line. Press **Return** to skip any unused prompt or leave the artist and album tags as supplied. A text file can contain blank lines and comments beginning with `#`.
+
+| Input | Saved under `~/Music/YouTube/` |
 | --- | --- |
-| Deutsch | [README](README-translations/README.de.md) |
-| Español | [README](README-translations/README.es.md) |
-| Français | [README](README-translations/README.fr.md) |
-| Italiano | [README](README-translations/README.it.md) |
-| Português (Brasil) | [README](README-translations/README.pt-BR.md) |
-| Nederlands | [README](README-translations/README.nl.md) |
-| Polski | [README](README-translations/README.pl.md) |
-| Türkçe | [README](README-translations/README.tr.md) |
-| 日本語 | [README](README-translations/README.ja.md) |
-| 한국어 | [README](README-translations/README.ko.md) |
-| 简体中文 | [README](README-translations/README.zh-Hans.md) |
+| Video URL | `Singles/` |
+| Playlist URL | `Playlists/<playlist title>/`, with numbered filenames |
+| Text file | `Batch/` |
 
-## Features
-
-- **Offline library** with recursive folder import, metadata, embedded artwork,
-  artist and genre matching, and duplicate management.
-- **Favorites and playlists** with smart playlists and a favorites filter in
-  **Library → Artists** and on artist pages.
-- **Playback** with a mini-player, Now Playing, background audio, lock-screen
-  controls, Bluetooth, shuffle, crossfade, gapless playback and a sleep timer.
-  Playback wraps to the first track at the end of the list. **Repeat One**
-  loops the current track, and **Next** still advances.
-- **Audio editing** with a waveform, precise in and out points, preview, undo
-  and redo. Keep a selected range or remove it and join the surrounding audio.
-- **Optional YouTube search and preview** using your own YouTube Data API key
-  and the official YouTube player. See [YouTube and Import](YOUTUBE_IMPORT.md).
-- **Optional Mac Companion** for pairing, converting and transferring authorized
-  audio from your Mac over local HTTPS.
-
-The dark interface uses mint accents, compact song rows and native glass on
-iOS 26. The mini-player uses the native tab accessory on iOS 26.1 and later.
-
-## Get started
-
-1. From **Home**, choose **YouTube & Import** or import a file or folder using
-   the add button. Playback and browsing work offline after import.
-2. Tap a song to play it. Open the mini-player for the full playback controls.
-3. Tap the heart to save a favorite. In **Library → Artists**, choose
-   **Favorites** to see your liked songs grouped by artist.
-
-### Edit a song
-
-In **Now Playing**, open **Playback Settings** with the sliders button and
-choose **Trim Audio**. Drag the two handles to mark the range. **Keep Selection**
-keeps that range, while **Remove Selection** cuts it out and joins the audio
-before and after it. Use **Preview the Join** to hear the transition.
-
-Under **Save**, choose **Create New Clip** to add a library entry or
-**Trim Original** to apply the edit to the existing entry. Playlists and
-favorites then use the edited version of that song.
-
-## Requirements
-
-- A Mac with Xcode 26.1 or later and the iOS SDK. See [Xcode system requirements](https://developer.apple.com/xcode/system-requirements/).
-- An iPhone running iOS 17 or later, or an installed iPhone simulator runtime.
-- For a physical iPhone, sign in to Xcode with an Apple Account and select a
-  signing team. See [Apple’s device setup instructions](https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices).
-- macOS 14 or later if you use the packaged Mac Companion.
-
-## Build the iOS app
-
-1. Open `OfflineMusic.xcodeproj` in Xcode.
-2. Select the `OfflineMusic` scheme and an iPhone simulator, then press **Run**.
-3. To run on an iPhone, select your team in the target’s **Signing & Capabilities**,
-   enable **Automatically manage signing**, and use a bundle identifier available
-   to your team. Select the connected iPhone and press **Run**.
+For a lighter run, start with a few links. The script downloads one fragment at a time, and `nice` gives other work on the Mac priority when it needs CPU time. Keep the archive files in the output folder so reruns skip items already recorded for that mode. When a folder is ready, send it to Files or use the Companion to share the finished MP3s.
 
 ## Mac Companion
 
-The easiest route is to open GitHub **Releases** and download the matching
-Companion ZIP: `arm64` for Apple silicon or `x86_64` for Intel. Setup details:
+Use **OfflineMusic Companion** to share audio files over your local network. On [GitHub Releases](https://github.com/permission-bit/FuckSpotify/releases), choose the `arm64` ZIP for Apple silicon or `x86_64` for Intel when a release is available. The packaged app requires **macOS 14+** and includes Python and FFmpeg. For a source setup, see the [Mac Companion guide](MAC_APP.md).
 
-- [Download and start the Mac Companion](MAC_APP.md)
-- [Pair an iPhone with the Mac](MAC_CONNECTION.md)
-- [Import finished Mac files on the iPhone](MAC_IMPORT.md)
-- [Companion API and security details](COMPANION.md)
-- [Converter API](CONVERTER.md)
+1. Open the Companion and click **Start Mac service**. Keep the Mac and iPhone on the same network.
+2. In jox, tap **Home → Mac icon**, scan the QR code, and confirm the certificate identity.
+3. Select the iPhone in the Companion and share files. On the iPhone, open **YouTube & Import → Imports** and choose a quality and playlist destination.
 
-For local development, create a Python environment and initialize the service.
+The connection uses local HTTPS with certificate pinning. [Pairing guide](MAC_CONNECTION.md) · [Import guide](MAC_IMPORT.md) · [Companion API](COMPANION.md)
 
-```sh
-python3 -m venv .venv-companion
-.venv-companion/bin/python -m pip install -r requirements-companion.txt
-./start-companion.sh init
-./start-companion.sh serve
-```
+## Development
 
-The default library is `~/Music/YouTube`. Use `--root /absolute/path` before
-the command to choose another library. The service listens on local HTTPS and
-requires explicit pairing before an iPhone can access it.
-
-## YouTube and copyright
-
-The iOS YouTube feature uses the official YouTube Data API and official player
-preview. It does not provide a download button. The Companion accepts only
-explicitly authorized local files or sources, and the caller must have the
-necessary rights. Do not download or import copyrighted material without
-permission. See [YouTube and Import](YOUTUBE_IMPORT.md) for the exact behavior.
-
-The legacy `playlist.py` command-line tool remains available. The reusable
-conversion implementation is in `converter_core.py`; there is no `convert.py`
-or `converter.py` entry point.
-
-## Tests
-
-The tests use temporary libraries, generated audio and local test servers. Install
-the Companion test dependencies before running the Python suites.
+The iOS app is in [`OfflineMusic/`](OfflineMusic/), the Mac app build scripts are in [`MacCompanion/`](MacCompanion/), and the regression suites are in [`Tests/`](Tests/).
 
 ```sh
-python3 -m venv .venv-companion
-.venv-companion/bin/python -m pip install -r requirements-companion-test.txt
-.venv-companion/bin/python -m unittest discover -s Tests -p 'test_*.py' -v
-.venv-companion/bin/python Tests/run_mac_connection_tests.py
-.venv-companion/bin/python Tests/run_mac_import_tests.py
-python3 Tests/run_youtube_tests.py
 python3 Tests/run_swift_regressions.py
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/check_localization.py
 ```
 
-To build the app for the simulator with signing disabled, use full Xcode.
-
-```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
-  -project OfflineMusic.xcodeproj -scheme OfflineMusic \
-  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO build
-```
-
-The localization audit checks the compiled strings, plural variants and permission
-prompts in all 12 languages. See [QUALITY_CHECK.md](QUALITY_CHECK.md) for the
-recorded verification scope and physical-device checks.
-
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `OfflineMusic/` | SwiftUI iOS app, audio engine and local library |
-| `MacCompanion/` | Packaged macOS Companion build scripts and runtime |
-| `companion_*.py` | Local HTTPS service, pairing and security |
-| `converter_core.py` | Durable conversion and validation engine |
-| `playlist.py` | Legacy interactive converter CLI |
-| `Tests/` | Python, Swift and integration tests |
-| `.github/workflows/` | GitHub Actions workflow for Companion artifacts/releases |
-| `README-translations/` | Short README summaries in 11 additional languages |
-
-## Privacy and security
-
-- Music and library metadata remain local unless the user explicitly transfers
-  a file to a paired iPhone.
-- The Companion uses local HTTPS, certificate pinning and one-time pairing
-  secrets.
-- Long-lived device tokens are stored in the iOS Keychain and only hashes are
-  stored by the Companion.
-- No API key, token, certificate private key or personal music file belongs in
-  this repository.
-
-## Releases
-
-The workflow **Download Mac Companion** builds Apple-silicon and Intel ZIPs.
-Running it manually creates artifacts. Pushing a tag matching
-`companion-v*` creates a draft GitHub release for review.
-
-The generated Companion is ad-hoc signed and not Apple-notarized. A normal
-public distribution requires the maintainer's own Developer ID certificate and
-Apple notarization; no signing credentials are included here.
+See [Quality checks](QUALITY_CHECK.md) for the simulator build and integration tests, [Contributing](CONTRIBUTING.md) for pull requests, and [Security](SECURITY.md) for private reports.
 
 ## License
 
-No open-source license has been selected yet. Until a `LICENSE` file is added,
-the repository should be treated as “all rights reserved”. Add a license before
-accepting external contributions or redistributing the project.
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
-Security issues should be reported privately as described in
-[SECURITY.md](SECURITY.md).
+The repository does not currently include an open-source license.

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import re
@@ -12,10 +11,8 @@ SINGLES_DIR = BASE_DIR / "Singles"
 PLAYLISTS_DIR = BASE_DIR / "Playlists"
 BATCH_DIR = BASE_DIR / "Batch"
 
-#AUDIO_QUALITY = "192K"
-AUDIO_QUALITY = "320K" #320K is better
-
-FRAGMENTS = 4
+AUDIO_QUALITY = "320K"
+FRAGMENTS = 1
 
 
 def clean_name(value):
